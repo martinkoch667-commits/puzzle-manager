@@ -142,7 +142,8 @@ button{font:inherit;color:inherit}
 .intro .btn:hover{background:#FFE5F9}
 
 .cursors{position:fixed;inset:0;pointer-events:none;z-index:15;overflow:hidden}
-.cur{position:absolute;left:0;top:0;transition:transform .09s linear;will-change:transform}
+.cur{position:absolute;left:0;top:0;transition:transform .12s linear,opacity .3s;will-change:transform}
+.piece.remote{transition:transform .12s linear}
 .cur svg{display:block;overflow:visible;filter:drop-shadow(0 1px 1.5px rgba(17,17,17,.28))}
 .cur .tag{position:absolute;left:22px;top:27px;padding:3px 8px 4px;border-radius:6px;font-size:13px;font-weight:500;line-height:1.25;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis;box-shadow:0 1px 3px rgba(17,17,17,.18)}
 .cur.idle{opacity:.45}
@@ -328,6 +329,7 @@ const uid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 /* ---------- Géométrie des contacts ---------- */
 function edgeContact(A,B){
+  if(overlap(A,B)) return null;
   const cfg=[
     [Math.abs(A.x+A.w-B.x)<EPS,'right','left','y',A.x+A.w],
     [Math.abs(B.x+B.w-A.x)<EPS,'left','right','y',A.x],
@@ -517,9 +519,9 @@ function renderPieces(contacts=computeContacts(S.pieces)){
       el._path=el.querySelector('path');
     }
     el._path.setAttribute('d',shapePath(p,f));
-    const rd=remoteDrag.get(p.id);
-    el.style.transform=rd?`translate(${rd[0]}px,${rd[1]}px)`:`translate(${p.x}px,${p.y}px)`;
-    el.classList.toggle('lift',!!rd||(drag&&drag.kind==='piece'&&drag.moved&&drag.G.has(p.id)));
+    el.style.transform=`translate(${p.x}px,${p.y}px)`;
+    el.classList.toggle('lift',remoteDrag.has(p.id)||!!(drag&&drag.kind==='piece'&&drag.moved&&drag.G.has(p.id)));
+    el.classList.toggle('remote',remoteDrag.has(p.id));
     el.classList.toggle('aimant',!!(hint&&hint.r>1&&(p.id===hint.b)));
   }
   const ord=S.pieces.map(p=>p.id).join(',');
@@ -588,7 +590,7 @@ function arrowSVG(a,G){
 /* ---------- Calques au-dessus ---------- */
 function renderOverlay(contacts=computeContacts(S.pieces)){
   const G=groupsOf(contacts);
-  $('Larrows').innerHTML=S.arrows.map(a=>arrowSVG(a,G)).join('');
+  setHTML('Larrows',S.arrows.map(a=>arrowSVG(a,G)).join(''));
   let html='';
   const selId=sel&&sel.type==='piece'&&!drag?sel.id:null;
   for(const c of contacts){
@@ -600,7 +602,7 @@ function renderOverlay(contacts=computeContacts(S.pieces)){
       html+=`<div class="badge vide" data-k="${c.key}" title="Choisir EXIGE ou PERMET" aria-label="Choisir EXIGE ou PERMET" style="transform:translate(${pos.x}px,${pos.y}px)"></div>`;
     }
   }
-  $('Lbadges').innerHTML=html;
+  setHTML('Lbadges',html);
   let gh='';
   if(sel&&sel.type==='piece'&&!drag){
     const p=byId(sel.id); if(p){const F=featuresMap(contacts,null);gh+=`<path transform="translate(${p.x} ${p.y})" d="${shapePath(p,F.get(p.id)||EMPTY)}" fill="none" stroke="#111" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;}
@@ -621,8 +623,10 @@ function renderOverlay(contacts=computeContacts(S.pieces)){
     const A=byId(drag.from), rA=[...G.get(A.id)].map(id=>grow(byId(id),GAP)), s=exitUnion(rA,{x:A.x+A.w/2,y:A.y+A.h/2},drag.cur);
     gh+=`<path d="M${s.x} ${s.y} L${drag.cur.x} ${drag.cur.y}" stroke="#111" stroke-width="2" stroke-dasharray="7 6" vector-effect="non-scaling-stroke"/><circle cx="${s.x}" cy="${s.y}" r="16" fill="#111"/><circle cx="${drag.cur.x}" cy="${drag.cur.y}" r="16" fill="#111"/>`;
   }
-  $('Lghost').innerHTML=gh;
+  setHTML('Lghost',gh);
 }
+const lastHTML={};
+function setHTML(id,html){if(lastHTML[id]===html)return;lastHTML[id]=html;$(id).innerHTML=html;}
 function renderAll(){const c=computeContacts(S.pieces);renderPieces(c);renderOverlay(c);renderSelbar();updateProgress();updateHistBtns();}
 
 /* ---------- Vue ---------- */
@@ -630,7 +634,7 @@ function applyView(){
   $('world').style.transform=`translate(${view.tx}px,${view.ty}px) scale(${view.s})`;
   $('zval').textContent=Math.round(view.s*100)+'%';
   if(!$('pop').hidden) closePop();
-  renderCursors();
+  snapCursors();
 }
 function zoomAt(cx,cy,f){
   const s2=clamp(view.s*f,.04,2), wx=(cx-view.tx)/view.s, wy=(cy-view.ty)/view.s;
@@ -673,10 +677,10 @@ function tidy(){
   let c=computeContacts(S.pieces);
   const touched=new Set(); c.forEach(x=>{touched.add(x.a);touched.add(x.b);});
   let changed=false;
-  S.pieces.forEach(p=>{if(touched.has(p.id))return;if(p.h0&&p.h!==p.h0){p.h=p.h0;changed=true;}if(p.w0&&p.w!==p.w0){p.w=p.w0;changed=true;}});
+  S.pieces.forEach(p=>{if(touched.has(p.id)||remoteDrag.has(p.id))return;if(p.h0&&p.h!==p.h0){p.h=p.h0;changed=true;}if(p.w0&&p.w!==p.w0){p.w=p.w0;changed=true;}});
   if(changed) c=computeContacts(S.pieces);
   const ks=new Set(c.map(x=>x.key));
-  Object.keys(S.meta).forEach(k=>{if(!ks.has(k))delete S.meta[k];});
+  Object.keys(S.meta).forEach(k=>{if(ks.has(k))return;const [a,b]=k.split('|');if(remoteDrag.has(a)||remoteDrag.has(b))return;delete S.meta[k];});
 }
 function commit(prune=true){
   if(sync.readOnly){revertToRemote();toast('Tu peux regarder la partie, pas la modifier : demande à l’organisateur de te passer Contributeur.');return Promise.resolve();}
@@ -733,7 +737,27 @@ function doVerify(){
 
 /* ---------- Actions sur la sélection ---------- */
 function select(s){sel=s;closePop();renderOverlay();renderSelbar();sendPresence({sel:s&&s.type==='piece'?s.id:null});}
-function nudgeFree(p){for(let i=0;i<60&&S.pieces.some(o=>o!==p&&overlap(o,p,-(SNAP+60)));i++) p.x+=220;}
+/* Cherche, en spirale autour de la place visée, un endroit où le groupe ne touche aucune autre carte */
+const FREE_GAP=90;
+function clashes(rects,ignore){
+  return rects.some(r=>S.pieces.some(o=>!ignore.has(o.id)&&o.x<r.x+r.w+FREE_GAP&&r.x<o.x+o.w+FREE_GAP&&o.y<r.y+r.h+FREE_GAP&&r.y<o.y+o.h+FREE_GAP));
+}
+function findFree(ids,prefAngle){
+  const G=new Set(ids), base=[...G].map(id=>byId(id)).filter(Boolean);
+  if(!clashes(base,G)) return {dx:0,dy:0};
+  const a0=prefAngle==null?0:prefAngle;
+  for(let r=140;r<=6000;r+=140){
+    const n=Math.max(8,Math.round(r/90));
+    for(let k=0;k<n;k++){
+      const a=a0+(k%2?1:-1)*Math.ceil(k/2)*(2*Math.PI/n);
+      const dx=Math.round(Math.cos(a)*r), dy=Math.round(Math.sin(a)*r);
+      if(!clashes(base.map(p=>({x:p.x+dx,y:p.y+dy,w:p.w,h:p.h})),G)) return {dx,dy};
+    }
+  }
+  return {dx:0,dy:0};
+}
+function moveToFree(ids,prefAngle){const d=findFree(ids,prefAngle);ids.forEach(id=>{const p=byId(id);if(p){p.x+=d.dx;p.y+=d.dy;}});return d;}
+function nudgeFree(p){moveToFree([p.id],0);}
 function deletePiece(id){pushHistory();S.pieces=S.pieces.filter(p=>p.id!==id);S.arrows=S.arrows.filter(a=>a.from!==id&&a.to!==id);sel=null;commit();}
 function duplicatePiece(id){
   const p=byId(id); if(!p) return; pushHistory();
@@ -743,8 +767,9 @@ function detachPiece(id){
   const G=groupOf(id); if(G.size<2) return; pushHistory();
   const p=byId(id), others=S.pieces.filter(o=>G.has(o.id)&&o.id!==id);
   const cx=others.reduce((s,o)=>s+o.x+o.w/2,0)/others.length, cy=others.reduce((s,o)=>s+o.y+o.h/2,0)/others.length;
-  let dx=p.x+p.w/2-cx, dy=p.y+p.h/2-cy; const n=Math.hypot(dx,dy)||1; dx/=n; dy/=n;
-  for(let i=1;i<24;i++){p.x=Math.round(p.x+dx*90);p.y=Math.round(p.y+dy*90);if(i>2&&!S.pieces.some(o=>o!==p&&overlap(o,p,-(SNAP+20))))break;}
+  const ang=Math.atan2(p.y+p.h/2-cy,p.x+p.w/2-cx);
+  p.x=Math.round(p.x+Math.cos(ang)*(SNAP+60)); p.y=Math.round(p.y+Math.sin(ang)*(SNAP+60));
+  moveToFree([p.id],ang);
   commit();
 }
 function deleteSel(){
@@ -920,6 +945,16 @@ function endPointer(e){
     const before=new Set(computeContacts(JSON.parse(d.before).pieces).map(c=>c.key));
     const sn=findSnap(d.G,d.resizable);
     d.G.forEach(id=>{const p=byId(id);if(sn){if(id===sn.a){p.x=sn.A2.x;p.y=sn.A2.y;p.w=sn.A2.w;p.h=sn.A2.h;}else{p.x+=sn.dx;p.y+=sn.dy;}}else{p.x=Math.round(p.x);p.y=Math.round(p.y);}});
+    if(!sn){
+      const mv=[...d.G].map(byId), others=S.pieces.filter(o=>!d.G.has(o.id));
+      const hit=others.find(o=>mv.some(m=>overlap(m,o)));
+      if(hit){
+        const gx=mv.reduce((a,m)=>a+m.x+m.w/2,0)/mv.length, gy=mv.reduce((a,m)=>a+m.y+m.h/2,0)/mv.length;
+        const ang=Math.atan2(gy-(hit.y+hit.h/2),gx-(hit.x+hit.w/2));
+        moveToFree([...d.G],ang);
+        d.G.forEach(id=>{const el=els.get(id);if(el){el.classList.add('snapping');setTimeout(()=>el.classList.remove('snapping'),200);}});
+      }
+    }
     if(sn) d.G.forEach(id=>{const el=els.get(id);if(el){el.classList.add('snapping');setTimeout(()=>el.classList.remove('snapping'),200);}});
     const fresh=computeContacts(S.pieces).filter(c=>!before.has(c.key)&&(d.G.has(c.a)!==d.G.has(c.b)));
     fresh.forEach(c=>{const owner=d.G.has(c.a)?c.a:c.b;S.meta[c.key]={...(S.meta[c.key]||{}),joint:owner,ju:(c.o1-c.o0)/2};});
@@ -1155,12 +1190,29 @@ function setSyncLabel(t,ok){const el=$('sync');el.hidden=false;el.classList.togg
 function pushRemote(){
   if(!sync.db||!sync.ready) return Promise.resolve();
   const cur=new Map(S.pieces.map(p=>[p.id,JSON.stringify(pieceData(p))]));
-  for(const [id,js] of cur) if(sync.remote[id]!==js) sync.dirty.add(id);
+  for(const [id,js] of cur) if(sync.remote[id]!==js&&!remoteDrag.has(id)) sync.dirty.add(id);
   for(const id of Object.keys(sync.remote)) if(!cur.has(id)) sync.gone.add(id);
   const lj=JSON.stringify({meta:S.meta,arrows:S.arrows}); if(lj!==sync.links) sync.linksDirty=true;
+  if(sync.db.batch){
+    sync.queue=sync.queue.then(async()=>{
+      const sets=[], dels=[], sent=new Map();
+      const taken=[...sync.dirty];
+      for(const id of taken){const p=byId(id);if(!p||remoteDrag.has(id))continue;const js=JSON.stringify(pieceData(p));if(sync.remote[id]===js)continue;sets.push(['pieces',id,JSON.parse(js)]);sent.set(id,js);}
+      const release=()=>taken.forEach(id=>{const p=byId(id);if(!p||!sent.has(id)||JSON.stringify(pieceData(p))===sent.get(id))sync.dirty.delete(id);});
+      for(const id of [...sync.gone]){sync.gone.delete(id);if(!byId(id))dels.push(id);}
+      let links=null;
+      if(sync.linksDirty){sync.linksDirty=false;const now=JSON.stringify({meta:S.meta,arrows:S.arrows});if(now!==sync.links){links=now;sets.push(['board','links',JSON.parse(now)]);}}
+      if(!sets.length&&!dels.length){release();return;}
+      try{await sync.db.batch(sets,dels);sent.forEach((js,id)=>{sync.remote[id]=js;});dels.forEach(id=>{delete sync.remote[id];});if(links)sync.links=links;}
+      catch(e){writeFailed(e);}
+      release();
+      if(sync.dirty.size) pushRemote();
+    }).catch(()=>{});
+    return sync.queue;
+  }
   sync.queue=sync.queue.then(async()=>{
     for(const id of [...sync.dirty]){
-      const p=byId(id); if(!p){sync.dirty.delete(id);continue;}
+      const p=byId(id); if(!p||remoteDrag.has(id)){sync.dirty.delete(id);continue;}
       const js=JSON.stringify(pieceData(p));
       if(sync.remote[id]===js){sync.dirty.delete(id);continue;}
       try{await sync.db.doc('pieces/'+id).set(JSON.parse(js));sync.remote[id]=js;}catch(e){writeFailed(e);}
@@ -1195,12 +1247,12 @@ function revertToRemote(){
 }
 /* Applique l'état de la base, sauf ce que ce poste est en train d'écrire ou de tenir en main */
 function applyRemote(force){
-  const held=drag&&drag.kind==='piece'?drag.G:new Set();
+  const held=new Set([...(drag&&drag.kind==='piece'?drag.G:[]),...remoteDrag.keys()]);
   const rp=remoteCache.pieces; let changed=false;
   const list=[];
   for(const p of S.pieces){
     if(rp.has(p.id)){
-      if(!force&&(held.has(p.id)||sync.dirty.has(p.id))){list.push(p);continue;}
+      if((!force||remoteDrag.has(p.id))&&(held.has(p.id)||sync.dirty.has(p.id))){list.push(p);continue;}
       const n=rp.get(p.id); if(JSON.stringify(pieceData(p))!==JSON.stringify(pieceData(n)))changed=true; list.push(n);
     }else if(!force&&(sync.dirty.has(p.id)||held.has(p.id))) list.push(p);
     else changed=true;
@@ -1281,7 +1333,8 @@ function makeOnline(cfg){
   const rows=new Map(); const lis={piece:new Set(),links:new Set()}; let loaded=false, loading=null;
   const snapPieces=()=>{const docs=[...rows.values()].filter(r=>r.kind==='piece').map(r=>({id:r.id,exists:true,data:()=>r.data}));return {docs,size:docs.length,empty:!docs.length,metadata:{fromCache:false,hasPendingWrites:false},docChanges:()=>[]};};
   const snapLinks=()=>{const r=rows.get('links');return {id:'links',exists:!!r,data:()=>r&&r.data,metadata:{fromCache:false,hasPendingWrites:false}};};
-  const emit=()=>{if(!loaded)return;lis.piece.forEach(f=>f(snapPieces()));lis.links.forEach(f=>f(snapLinks()));};
+  let emitT=0;
+  const emit=()=>{if(!loaded||emitT)return;emitT=setTimeout(()=>{emitT=0;lis.piece.forEach(f=>f(snapPieces()));lis.links.forEach(f=>f(snapLinks()));},40);};
   const load=()=>loading||(loading=(async()=>{
     sb.channel('db:'+BOARD).on('postgres_changes',{event:'*',schema:'public',table:T},pl=>{
       const r=pl.eventType==='DELETE'?pl.old:pl.new; if(!r||r.board!==BOARD)return;
@@ -1300,7 +1353,17 @@ function makeOnline(cfg){
       onSnapshot(next,err){lis.links.add(next);load().then(()=>next(snapLinks()),e=>err&&err(fail(e)));return ()=>lis.links.delete(next);}
     };
   };
-  const db={doc:docRef,collection:()=>({onSnapshot(next,err){lis.piece.add(next);load().then(()=>next(snapPieces()),e=>err&&err(fail(e)));return ()=>lis.piece.delete(next);}})};
+  /* un seul aller-retour pour toutes les cartes changées d'un coup */
+  async function batch(sets,dels){
+    const now=new Date().toISOString();
+    if(sets.length){
+      const body=sets.map(([col,id,data])=>({board:BOARD,kind:col==='board'?'links':'piece',id,data,updated_at:now}));
+      const {error}=await sb.from(T).upsert(body); if(error) throw fail(error);
+      body.forEach(r=>rows.set(r.id,r));
+    }
+    if(dels.length){const {error}=await sb.from(T).delete().eq('board',BOARD).in('id',dels);if(error)throw fail(error);dels.forEach(id=>rows.delete(id));}
+  }
+  const db={batch,doc:docRef,collection:()=>({onSnapshot(next,err){lis.piece.add(next);load().then(()=>next(snapPieces()),e=>err&&err(fail(e)));return ()=>lis.piece.delete(next);}})};
 
   /* Salle : qui est là (presence) et où est chacun (broadcast, dix fois par seconde au plus) */
   const myPeer=Math.random().toString(36).slice(2,12);
@@ -1327,7 +1390,7 @@ function makeOnline(cfg){
       for(const [k,v] of Object.entries(patch)){if(v===null)delete mine[k];else mine[k]=v;}
       mine.__k=myPeer;
       if('name' in patch||'color' in patch){if(joined)ch.track({name:mine.name||'',color:mine.color||''});}
-      if(!sendT){const wait=Math.max(0,100-(Date.now()-lastSent));sendT=setTimeout(flush,wait);}
+      if(!sendT){const wait=Math.max(0,60-(Date.now()-lastSent));sendT=setTimeout(flush,wait);}
       return Promise.resolve();
     },
     onPeers(fn){peerFns.add(fn);setTimeout(notify,0);return ()=>peerFns.delete(fn);},
@@ -1337,31 +1400,56 @@ function makeOnline(cfg){
 
 /* ---------- Présence : curseurs et profils ---------- */
 function sendPresence(patch){if(sync.room)sync.room.presence(patch).catch(()=>{});}
+const releaseT=new Map();
+let peersRaf=0;
 function onPeersChanged(){
+  if(peersRaf) return; peersRaf=1;
+  const run=()=>{if(!peersRaf)return;peersRaf=0;applyPeers();};
+  requestAnimationFrame(run); setTimeout(run,70);
+}
+function applyPeers(){
   const rd=new Map();
   for(const pr of peers){
     if(pr.sameTab) continue; const d=pr.presence&&pr.presence.drag;
     if(Array.isArray(d)) d.slice(0,24).forEach(it=>{if(Array.isArray(it)&&typeof it[0]==='string'&&isFinite(it[1])&&isFinite(it[2])&&!(drag&&drag.G&&drag.G.has(it[0])))rd.set(it[0],[+it[1],+it[2]]);});
   }
+  let moved=false;
+  for(const [id,[x,y]] of rd){const p=byId(id);clearTimeout(releaseT.get(id));if(p&&(p.x!==x||p.y!==y)){p.x=x;p.y=y;moved=true;}}
+  /* lâchée chez l'autre : on attend la position enregistrée, puis on se recale sur elle */
+  for(const id of remoteDrag.keys()) if(!rd.has(id)){
+    const last=remoteDrag.get(id);
+    clearTimeout(releaseT.get(id));
+    releaseT.set(id,setTimeout(()=>{releaseT.delete(id);const p=byId(id),t=remoteCache.pieces.get(id);
+      if(p&&t&&!sync.dirty.has(id)&&p.x===last[0]&&p.y===last[1]&&(t.x!==p.x||t.y!==p.y)){Object.assign(p,{x:t.x,y:t.y,w:t.w,h:t.h});renderAll();}},1500));
+  }
   remoteDrag=rd;
-  renderPieces(); renderOverlay(); renderCursors(); renderPeople();
+  if(moved){const c=computeContacts(S.pieces);renderPieces(c);renderOverlay(c);updateProgress();}
+  else renderOverlay();
+  renderCursors(); renderPeople();
 }
 const initials=n=>String(n||'?').trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase()||'?';
 function peerName(pr){const n=pr.presence&&pr.presence.name;return typeof n==='string'&&n.trim()?n.trim().slice(0,24):(pr.guest?'Invité':'Quelqu’un');}
 function peerColor(pr){const c=pr.presence&&pr.presence.color;return validColor(c)?c:'#111111';}
+const curEls=new Map();
 function renderCursors(){
   const L=$('cursors'); if(!L) return;
-  const now=Date.now(); let html='';
+  const now=Date.now(), seen=new Set();
   for(const pr of peers){
     if(pr.sameTab||pr.kind!=='viewer') continue;
     const ps=pr.presence||{}; if(!isFinite(ps.x)||!isFinite(ps.y)||ps.x===null) continue;
-    const sp=toScreen(+ps.x,+ps.y), col=peerColor(pr), fg=fgOf(col);
-    html+=`<div class="cur${now-pr.updatedAt>45000?' idle':''}" style="transform:translate(${sp.x.toFixed(1)}px,${sp.y.toFixed(1)}px)">
-      <svg width="22" height="22" viewBox="0 0 22 22"><path d="M4.2 3.1 L19.4 9.4 L12.3 11.9 L9.6 18.9 Z" fill="${col}" stroke="${col}" stroke-width="3" stroke-linejoin="round"/></svg>
-      <span class="tag" style="background:${col};color:${fg}">${esc(peerName(pr))}</span></div>`;
+    seen.add(pr.peer);
+    const sp=toScreen(+ps.x,+ps.y), col=peerColor(pr), name=peerName(pr);
+    let el=curEls.get(pr.peer);
+    if(!el){el=document.createElement('div');el.className='cur';el.innerHTML='<svg width="22" height="22" viewBox="0 0 22 22"><path d="M4.2 3.1 L19.4 9.4 L12.3 11.9 L9.6 18.9 Z" stroke-width="3" stroke-linejoin="round"/></svg><span class="tag"></span>';L.appendChild(el);curEls.set(pr.peer,el);}
+    if(el._col!==col){el._col=col;const pa=el.querySelector('path');pa.setAttribute('fill',col);pa.setAttribute('stroke',col);const t=el.querySelector('.tag');t.style.background=col;t.style.color=fgOf(col);}
+    if(el._name!==name){el._name=name;el.querySelector('.tag').textContent=name;}
+    el.style.transform=`translate(${sp.x.toFixed(1)}px,${sp.y.toFixed(1)}px)`;
+    el.classList.toggle('idle',now-pr.updatedAt>45000);
   }
-  L.innerHTML=html;
+  for(const [k,el] of curEls) if(!seen.has(k)){el.remove();curEls.delete(k);}
 }
+/* pendant un zoom ou un déplacement de vue, les curseurs suivent sans glisser */
+function snapCursors(){curEls.forEach(el=>{el.style.transition='none';});renderCursors();requestAnimationFrame(()=>curEls.forEach(el=>{el.style.transition='';}));}
 function renderPeople(){
   const box=$('people'); if(!box) return;
   const others=peers.filter(p=>!p.sameTab&&p.kind==='viewer');
@@ -1370,7 +1458,7 @@ function renderPeople(){
   if(me) html+=`<button class="av me" data-me="1" style="background:${me.color};color:${fgOf(me.color)}" title="${esc(me.name)} (toi) : changer de prénom ou de couleur">${esc(initials(me.name))}</button>`;
   others.slice(0,6).forEach(pr=>{const c=peerColor(pr);html+=`<button class="av" data-peer="${esc(pr.peer)}" style="background:${c};color:${fgOf(c)}" title="${esc(peerName(pr))} : aller à son curseur">${esc(initials(peerName(pr)))}</button>`;});
   if(others.length>6) html+=`<span class="more">+${others.length-6}</span>`;
-  box.innerHTML=html;
+  if(box._html!==html){box._html=html;box.innerHTML=html;}
 }
 $('people').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b) return;
