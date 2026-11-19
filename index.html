@@ -92,6 +92,12 @@ button{font:inherit;color:inherit}
 #pop .pb.on{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ink)!important}
 #pop .lbl{font-size:12px;opacity:.6;max-width:90px;line-height:1.25;padding:0 4px}
 
+#handles{position:absolute;inset:0;pointer-events:none;z-index:3}
+.hd{position:absolute;left:0;top:0;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;border:0;padding:0;background:#fff;box-shadow:0 1px 6px rgba(17,17,17,.35);pointer-events:auto;cursor:crosshair;transition:scale .12s ease;animation:hd-in .16s ease}
+.hd::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--ink)}
+.hd:hover{scale:1.3}
+@keyframes hd-in{from{opacity:0;scale:.5}to{opacity:1;scale:1}}
+#pop .chip{border-radius:0}
 .ctx{position:fixed;z-index:45;background:#fff;box-shadow:0 12px 36px rgba(17,17,17,.22);padding:6px;min-width:230px;max-width:calc(100% - 24px);font-size:14px;user-select:none;-webkit-user-select:none}
 .ctx .it{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:9px 10px;text-align:left;cursor:pointer;font:inherit;font-size:14px;color:var(--ink)}
 .ctx .it:hover,.ctx .it:focus-visible{background:var(--mist);outline:none}
@@ -190,16 +196,17 @@ button{font:inherit;color:inherit}
   .intro .ttl{font-size:26px}
   #selbar{top:calc(110px + env(safe-area-inset-top,0px))}
 }
-@media (prefers-reduced-motion:reduce){.piece.snapping{transition:none}.badge.vide{animation:none;transition:none}}
+@media (prefers-reduced-motion:reduce){.piece.snapping{transition:none}.hd{animation:none;transition:none}.badge.vide{animation:none;transition:none}}
 </style>
 
 <div id="vp">
   <div class="world" id="world">
-    <div class="layer" id="Lpieces"></div>
     <svg class="layer" id="Larrows" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"></svg>
+    <div class="layer" id="Lpieces"></div>
     <svg class="layer" id="Lghost" xmlns="http://www.w3.org/2000/svg"></svg>
     <div class="layer" id="Lbadges"></div>
   </div>
+  <div id="handles"></div>
 </div>
 
 <header class="panel" id="head">
@@ -384,7 +391,7 @@ function badgePos(c){
 }
 /* Encoches de chaque carte : elles ne viennent que des emboîtements (et de l'aperçu en cours) */
 function featuresMap(contacts,hv){
-  const M=new Map(); const get=id=>{if(!M.has(id))M.set(id,{top:[],right:[],bottom:[],left:[]});return M.get(id);};
+  const M=new Map(); const get=id=>{if(!M.has(id))M.set(id,{top:[],right:[],bottom:[],left:[],badge:new Set()});return M.get(id);};
   const add=(c,u,owner,r)=>{
     const A=byId(c.a),B=byId(c.b);
     for(const [P,side] of [[A,c.sa],[B,c.sb]]){
@@ -392,7 +399,12 @@ function featuresMap(contacts,hv){
       get(P.id)[side].push({p:u-start,k:P.id===owner?'tab':'hole',r});
     }
   };
-  for(const c of contacts){const m=S.meta[c.key];if(m&&m.joint&&byId(c.a)&&byId(c.b))add(c,jointU(c,m),m.joint,R);}
+  for(const c of contacts){
+    const m=S.meta[c.key]; if(!m||!byId(c.a)||!byId(c.b)) continue;
+    if(m.joint) add(c,jointU(c,m),m.joint,R);
+    /* une pastille sur la jointure : le texte des deux cartes s'en écarte */
+    if(m.type==='EXIGE'||m.type==='PERMET'){get(c.a).badge.add(c.sa);get(c.b).badge.add(c.sb);}
+  }
   if(hv&&hv.r>0.5){
     const A=byId(hv.a),B=byId(hv.b);
     if(A&&B){
@@ -492,7 +504,7 @@ function lum(hex){const n=parseInt(hex.slice(1),16),c=[n>>16,n>>8&255,n&255].map
 const fgOf=color=>lum(color)<.2?'#FFFFFF':'#111111';
 /* Les marges du texte s'écartent des creux, pour qu'aucune lettre ne soit mangée par une encoche */
 function pads(p,f){
-  const base=p.w>=600?66:58, clear=R+24, hole=s=>f[s].some(q=>q.k==='hole');
+  const base=p.w>=600?66:58, clear=R+24, hole=s=>f[s].some(q=>q.k==='hole')||!!(f.badge&&f.badge.has(s));
   return {pt:hole('top')?Math.max(76,clear):76, pr:hole('right')?clear:base, pb:hole('bottom')?clear:34, pl:hole('left')?clear:base};
 }
 function contentHTML(p,pd,edit){
@@ -647,11 +659,20 @@ function renderOverlay(contacts=computeContacts(S.pieces)){
       gh+=`<path transform="translate(${q.x} ${q.y})" d="${shapePath(q,f)}" fill="${p.color}" fill-opacity=".3" stroke="#111" stroke-width="2" stroke-dasharray="7 5" vector-effect="non-scaling-stroke"/>`;
     }
   }
-  if(drag&&drag.kind==='link'&&drag.cur){
-    const A=byId(drag.from), RA=bboxOf(G.get(A.id),GAP), s=exitPt(RA,{x:A.x+A.w/2,y:A.y+A.h/2},drag.cur);
-    gh+=`<path d="M${s.x} ${s.y} L${drag.cur.x} ${drag.cur.y}" stroke="#111" stroke-width="2" stroke-dasharray="7 6" vector-effect="non-scaling-stroke"/><circle cx="${s.x}" cy="${s.y}" r="16" fill="#111"/><circle cx="${drag.cur.x}" cy="${drag.cur.y}" r="16" fill="#111"/>`;
+  if(drag&&drag.kind==='link'&&drag.cur&&byId(drag.from)){
+    const A=byId(drag.from), T=drag.target&&byId(drag.target);
+    if(T){
+      const g=arrowGeom({from:A.id,to:T.id,flip:false},G);
+      const fT=featuresMap(contacts,null).get(T.id)||EMPTY;
+      gh+=`<path transform="translate(${T.x} ${T.y})" d="${shapePath(T,fT)}" fill="${T.color}" fill-opacity=".18" stroke="#111" stroke-width="4" vector-effect="non-scaling-stroke"/>`;
+      if(g) gh+=`<path d="M${g.s.x} ${g.s.y} C${g.t1.x} ${g.t1.y} ${g.t2.x} ${g.t2.y} ${g.e.x} ${g.e.y}" fill="none" stroke="#111" stroke-opacity=".55" stroke-width="8" stroke-dasharray="22 13"/><circle cx="${g.s.x}" cy="${g.s.y}" r="16" fill="#111" fill-opacity=".55"/><circle cx="${g.e.x}" cy="${g.e.y}" r="16" fill="#111" fill-opacity=".55"/>`;
+    }else{
+      const RA=bboxOf(G.get(A.id),GAP), s=exitPt(RA,{x:A.x+A.w/2,y:A.y+A.h/2},drag.cur);
+      gh+=`<path d="M${s.x} ${s.y} L${drag.cur.x} ${drag.cur.y}" stroke="#111" stroke-opacity=".55" stroke-width="8" stroke-dasharray="22 13"/><circle cx="${s.x}" cy="${s.y}" r="16" fill="#111" fill-opacity=".55"/><circle cx="${drag.cur.x}" cy="${drag.cur.y}" r="16" fill="#111" fill-opacity=".55"/>`;
+    }
   }
   setHTML('Lghost',gh);
+  renderHandles();
 }
 const lastHTML={};
 function setHTML(id,html){if(lastHTML[id]===html)return;lastHTML[id]=html;$(id).innerHTML=html;}
@@ -662,7 +683,7 @@ function applyView(){
   $('world').style.transform=`translate(${view.tx}px,${view.ty}px) scale(${view.s})`;
   $('zval').textContent=Math.round(view.s*100)+'%';
   if(!$('pop').hidden) closePop();
-  snapCursors();
+  snapCursors(); renderHandles();
 }
 function zoomAt(cx,cy,f){
   const s2=clamp(view.s*f,.04,2), wx=(cx-view.tx)/view.s, wy=(cy-view.ty)/view.s;
@@ -843,13 +864,22 @@ function openJunctionPop(k){
     <button class="pb exige${cur==='EXIGE'?' on':''}" data-t="EXIGE">EXIGE</button>
     <button class="pb permet${cur==='PERMET'?' on':''}" data-t="PERMET">PERMET</button>
     <button class="btn" data-t="">Aucune</button>`;
-  pop.dataset.k=k; pop.hidden=false; $('selbar').hidden=true;
+  pop.dataset.k=k; pop.dataset.mode='junction'; pop.hidden=false; $('selbar').hidden=true;
   const r=pop.getBoundingClientRect();
   pop.style.left=clamp(pos.x-r.width/2,12,innerWidth-r.width-12)+'px';
   pop.style.top=clamp(pos.y+70*view.s+16,12,innerHeight-r.height-12)+'px';
 }
 function closePop(){if($('pop').hidden)return;$('pop').hidden=true;renderSelbar();}
 $('pop').addEventListener('click',e=>{
+  const ab=e.target.closest('[data-akw],[data-aact]');
+  if(ab){
+    const a=S.arrows.find(x=>x.id===$('pop').dataset.aid); if(!a){closePop();return;}
+    if(ab.dataset.aact==='del'){closePop();sel={type:'arrow',id:a.id};deleteSel();return;}
+    pushHistory();
+    if(ab.dataset.akw) a.kw=ab.dataset.akw;
+    if(ab.dataset.aact==='swap'){const f=a.from;a.from=a.to;a.to=f;}
+    closePop(); commit(); return;
+  }
   const b=e.target.closest('[data-t]'); if(!b) return;
   const k=$('pop').dataset.k; pushHistory();
   S.meta[k]=S.meta[k]||{};
@@ -925,17 +955,21 @@ vp.addEventListener('pointerdown',e=>{
   const bk=t.closest&&t.closest('.badge'), pidEl=t.closest&&t.closest('[data-pid]'), aidEl=t.closest&&t.closest('[data-aid]');
   if(e.button===1||(e.button===0&&spaceDown)){drag={kind:'pan',sx:e.clientX,sy:e.clientY,tx:view.tx,ty:view.ty};vp.classList.add('panning');capture(e);return;}
   if(e.button!==0&&e.pointerType==='mouse') return;
+  const hdEl=t.closest&&t.closest('.hd');
+  if(hdEl&&e.button===0){
+    drag={kind:'link',from:hdEl.dataset.hpid,cur:toWorld(e.clientX,e.clientY),target:null};
+    hoverPid=null; renderHandles(); capture(e); renderOverlay(); return;
+  }
   if(drag&&drag.pending){
-    const to=pidEl&&pidEl.dataset.pid, from=drag.from; drag=null;
-    if(to&&to!==from){pushHistory();const a={id:uid('a'),from,to,kw:'permet',flip:false};S.arrows.push(a);sel={type:'arrow',id:a.id};setTool('move');commit();toast('Flèche posée. Choisis son mot-clé en haut : permet, exige ou s’oppose à.');}
-    else{setTool('move');renderOverlay();}
+    const T=pieceAt(toWorld(e.clientX,e.clientY),drag.from), from=drag.from; drag=null; setTool('move');
+    finishLink(from,T&&T.id);
     return;
   }
   if(bk){openJunctionPop(bk.dataset.k);return;}
-  if(aidEl&&tool==='move'){select({type:'arrow',id:aidEl.dataset.aid});return;}
+  if(aidEl&&tool==='move'){select({type:'arrow',id:aidEl.dataset.aid});openArrowPop(aidEl.dataset.aid,e.clientX,e.clientY);return;}
   if(pidEl){
     const pid=pidEl.dataset.pid;
-    if(tool==='link'){drag={kind:'link',from:pid,cur:null};sel=null;renderSelbar();}
+    if(tool==='link'){drag={kind:'link',from:pid,cur:toWorld(e.clientX,e.clientY),target:null};sel=null;renderSelbar();}
     else startPieceDrag(e,pid);
     capture(e); return;
   }
@@ -952,9 +986,16 @@ vp.addEventListener('pointermove',e=>{
     const s2=clamp(pinch.view.s*d/pinch.d,.04,2), wx=(pinch.mx-pinch.view.tx)/pinch.view.s, wy=(pinch.my-pinch.view.ty)/pinch.view.s;
     view={s:s2,tx:mx-wx*s2,ty:my-wy*s2}; userView=true; applyView(); return;
   }
-  if(!drag) return;
+  if(!drag){
+    if(e.pointerType==='mouse'){const hd=e.target.closest&&e.target.closest('.hd');const P=hd?byId(hd.dataset.hpid):pieceAt(toWorld(e.clientX,e.clientY));setHover(P?P.id:null);}
+    return;
+  }
   if(drag.kind==='pan'){userView=true;view.tx=drag.tx+e.clientX-drag.sx;view.ty=drag.ty+e.clientY-drag.sy;applyView();return;}
-  if(drag.kind==='link'){drag.cur=toWorld(e.clientX,e.clientY);if(!raf)raf=requestAnimationFrame(()=>{raf=0;renderOverlay();});return;}
+  if(drag.kind==='link'){
+    drag.cur=toWorld(e.clientX,e.clientY);
+    const T=pieceAt(drag.cur,drag.from); drag.target=T?T.id:null;
+    if(!raf)raf=requestAnimationFrame(()=>{raf=0;renderOverlay();});return;
+  }
   if(drag.kind==='piece'){
     const dxs=e.clientX-drag.sx, dys=e.clientY-drag.sy;
     if(!drag.moved){if(Math.hypot(dxs,dys)<4)return;drag.moved=true;clearTimeout(drag.lp);drag.G.forEach(id=>els.get(id)&&els.get(id).classList.add('lift'));$('selbar').hidden=true;}
@@ -995,13 +1036,8 @@ function endPointer(e){
     pushHistory(d.before); commit().then(()=>sendPresence({drag:null}),()=>sendPresence({drag:null}));
     if(fresh.length) setTimeout(()=>openJunctionPop(fresh[0].key),200);
   }else if(d.kind==='link'){
-    const t=document.elementFromPoint(e.clientX,e.clientY), to=t&&t.closest&&t.closest('[data-pid]');
-    if(to&&to.dataset.pid!==d.from){
-      pushHistory();
-      const a={id:uid('a'),from:d.from,to:to.dataset.pid,kw:'permet',flip:false};
-      S.arrows.push(a); sel={type:'arrow',id:a.id}; commit();
-      toast('Flèche posée. Choisissez son mot-clé en haut : permet, exige ou s’oppose à.');
-    }else renderOverlay();
+    const T=d.target?byId(d.target):pieceAt(toWorld(e.clientX,e.clientY),d.from);
+    finishLink(d.from,T&&T.id);
   }
 }
 vp.addEventListener('pointerup',endPointer);
@@ -1028,6 +1064,48 @@ vp.addEventListener('gesturechange',e=>{e.preventDefault();zoomAt(e.clientX,e.cl
 vp.addEventListener('gestureend',e=>e.preventDefault());
 vp.addEventListener('dblclick',e=>{const p=e.target.closest&&e.target.closest('[data-pid]');if(p&&tool==='move')openEditor(p.dataset.pid);});
 
+/* ---------- Poser une flèche : poignées, carte visée, choix du mot ---------- */
+/* la carte sous un point du plateau, celle du dessus d'abord (on ne demande pas au navigateur : une flèche ou une pastille pourrait masquer la carte) */
+function pieceAt(w,except){for(let i=S.pieces.length-1;i>=0;i--){const p=S.pieces[i];if(p.id!==except&&w.x>=p.x-8&&w.x<=p.x+p.w+8&&w.y>=p.y-8&&w.y<=p.y+p.h+8)return p;}return null;}
+let hoverPid=null, hoverOff=0;
+function handlePid(){if(drag||!$('modal').hidden)return null;return hoverPid||(sel&&sel.type==='piece'?sel.id:null);}
+function renderHandles(){
+  const L=$('handles'); if(!L) return;
+  const p=byId(handlePid()); let html='';
+  if(p){
+    const pts=[[p.x+p.w/2,p.y,0,-1],[p.x+p.w,p.y+p.h/2,1,0],[p.x+p.w/2,p.y+p.h,0,1],[p.x,p.y+p.h/2,-1,0]];
+    html=pts.map(([x,y,dx,dy])=>{const sp=toScreen(x,y);return `<button class="hd" data-hpid="${p.id}" style="left:${(sp.x+dx*18).toFixed(1)}px;top:${(sp.y+dy*18).toFixed(1)}px" title="Tirer une flèche vers une autre carte" aria-label="Tirer une flèche depuis cette carte"></button>`;}).join('');
+  }
+  if(L._html!==html){L._html=html;L.innerHTML=html;}
+}
+function setHover(pid){
+  if(pid){clearTimeout(hoverOff);hoverOff=0;if(pid!==hoverPid){hoverPid=pid;renderHandles();}}
+  else if(hoverPid&&!hoverOff){hoverOff=setTimeout(()=>{hoverOff=0;hoverPid=null;renderHandles();},450);}
+}
+function arrowMid(a){
+  const c=computeContacts(S.pieces), g=arrowGeom(a,groupsOf(c)); if(!g) return null;
+  const t=.5,u=.5; return {x:u*u*u*g.s.x+3*u*u*t*g.t1.x+3*u*t*t*g.t2.x+t*t*t*g.e.x, y:u*u*u*g.s.y+3*u*u*t*g.t1.y+3*u*t*t*g.t2.y+t*t*t*g.e.y};
+}
+function openArrowPop(aid,sx,sy){
+  const a=S.arrows.find(x=>x.id===aid); if(!a) return;
+  if(sx==null){const m=arrowMid(a);if(!m)return;const sp=toScreen(m.x,m.y);sx=sp.x;sy=sp.y;}
+  const A=byId(a.from), pop=$('pop');
+  pop.innerHTML=`<span class="lbl">${esc((A&&A.title)||'Cette carte')}…</span>`+
+    Object.entries(KW).map(([k,v])=>`<button class="chip${a.kw===k?' on':''}" data-akw="${k}"><i style="background:${v.line}"></i>${v.word}</button>`).join('')+
+    `<button class="btn" data-aact="swap" title="Inverser le sens">⇄</button><button class="btn" data-aact="del" title="Supprimer la flèche">Supprimer</button>`;
+  pop.dataset.mode='arrow'; pop.dataset.aid=aid; pop.hidden=false; $('selbar').hidden=true;
+  const r=pop.getBoundingClientRect();
+  pop.style.left=clamp(sx-r.width/2,12,innerWidth-r.width-12)+'px';
+  pop.style.top=(sy+56+r.height<innerHeight-90?sy+56:clamp(sy-r.height-56,12,innerHeight-r.height-12))+'px';
+}
+function finishLink(from,to){
+  if(!to||to===from||!byId(from)||!byId(to)){renderOverlay();return;}
+  pushHistory();
+  const a={id:uid('a'),from,to,kw:'permet',flip:false};
+  S.arrows.push(a); sel={type:'arrow',id:a.id}; commit();
+  setTimeout(()=>openArrowPop(a.id),60);
+}
+
 /* ---------- Clic droit ---------- */
 const MOD=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent)?'⌘':'Ctrl ';
 let ctxPlace=null;
@@ -1043,7 +1121,7 @@ function openCtx(x,y,items){
   const f=m.querySelector('.it'); f&&f.focus({preventScroll:true});
 }
 function startLinkFrom(pid){
-  setTool('link'); drag={kind:'link',from:pid,cur:null,pending:true}; sel=null; renderSelbar();
+  setTool('link'); drag={kind:'link',from:pid,cur:null,target:null,pending:true}; sel=null; renderSelbar();
   toast('Clique sur la carte à relier. Échap pour annuler.');
 }
 vp.addEventListener('contextmenu',e=>{
@@ -1123,7 +1201,7 @@ window.addEventListener('keyup',e=>{if(e.key===' ')spaceDown=false;});
 
 /* ---------- Barre d'outils ---------- */
 function setTool(t){tool=t;$('tMove').classList.toggle('on',t==='move');$('tLink').classList.toggle('on',t==='link');vp.classList.toggle('tool-link',t==='link');
-  if(t==='link') toast('Relier : tirez d’une pièce vers une autre pièce.');}
+  if(t==='link') toast('Relier : tire d’une carte vers une autre. Astuce : les petits points au bord des cartes font la même chose.');}
 $('tMove').onclick=()=>setTool('move');
 $('tLink').onclick=()=>setTool(tool==='link'?'move':'link');
 $('bAdd').onclick=()=>openEditor(null);
@@ -1272,7 +1350,7 @@ function openIntro(){
       <li>Approchez une carte d’une autre : leurs bords se changent en encoches. Lâchez, elles s’emboîtent. Côte à côte, elles prennent la même hauteur.</li>
       <li>Option (Alt) + glisser, ou appui long au doigt : la carte sort seule de son groupe.</li>
       <li>À chaque emboîtement, dites si la carte EXIGE ou PERMET sa voisine.</li>
-      <li>Outil Relier : tirez une flèche d’un groupe à l’autre, puis choisissez permet, exige ou s’oppose à.</li>
+      <li>Pour relier deux groupes : survole une carte, attrape un des petits points sur ses bords et tire jusqu’à l’autre carte. Choisis ensuite permet, exige ou s’oppose à.</li>
     </ol>
     <div class="rule"></div>
     <form class="join" id="iForm">
