@@ -33,7 +33,7 @@ button{font:inherit;color:inherit}
 .piece.snapping{transition:transform .16s cubic-bezier(.2,.9,.3,1.25)}
 .c{position:absolute;inset:0;--k:1;padding:var(--pt,76px) var(--pr,64px) 0 var(--pl,64px);color:var(--fg);display:flex;flex-direction:column;overflow:hidden;user-select:none;-webkit-user-select:none;box-sizing:border-box}
 .num{font-weight:700;font-size:calc(58px*var(--k));line-height:1;letter-spacing:-.01em;margin-bottom:calc(38px*var(--k))}
-.ttl{font-weight:500;font-size:calc(46px*var(--k));line-height:1.08;text-transform:uppercase;margin-bottom:calc(22px*var(--k));overflow-wrap:break-word}
+.ttl{font-weight:500;font-size:calc(46px*var(--k));line-height:1.08;text-transform:uppercase;margin-bottom:calc(22px*var(--k));overflow-wrap:normal;word-break:normal;hyphens:manual}
 .dsc{font-size:calc(23px*var(--k));line-height:1.3;white-space:pre-line;overflow-wrap:break-word}
 .dsc b{font-weight:700}
 .rule{height:1.5px;background:var(--fg);opacity:.5;margin-top:calc(32px*var(--k));flex:none}
@@ -57,7 +57,8 @@ button{font:inherit;color:inherit}
 #head .sub{font-size:13px;opacity:.65}
 #prog{font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;display:flex;gap:6px;align-items:center;margin-top:4px}
 #prog .dot{width:10px;height:10px;border-radius:50%;background:var(--wine)}
-#topr{top:calc(16px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));display:flex;padding:6px;gap:2px}
+#topr{top:calc(16px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;padding:6px;gap:2px}
+#topr .round{width:36px;height:36px}
 #bar{bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px;max-width:calc(100% - 32px);overflow-x:auto;scrollbar-width:none}
 #bar::-webkit-scrollbar{display:none}
 .grp{display:flex;gap:2px;align-items:center;flex:none}
@@ -222,11 +223,14 @@ button{font:inherit;color:inherit}
 <div class="cursors" id="cursors"></div>
 <div class="panel" id="topr">
   <div id="people" aria-label="Personnes sur le plateau"></div>
+  <button class="btn" id="bSave" title="Enregistrer une version du plateau">Enregistrer</button>
+  <span class="sep"></span>
   <button class="btn hist" id="bUndo" title="Annuler (⌘Z)" aria-label="Annuler"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
   <button class="btn hist" id="bRedo" title="Rétablir (⌘⇧Z)" aria-label="Rétablir"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
   <span class="sep"></span>
   <button class="btn wine" id="bShare" hidden>Partager</button>
   <button class="btn" id="bData" aria-label="Sauvegarde"><span class="tl">Sauvegarde</span><span class="ic">⇅</span></button>
+  <button class="round" id="bSettings" title="Paramètres" aria-label="Paramètres"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   <button class="round" id="bHelp" title="Règles du jeu" aria-label="Règles du jeu">?</button>
 </div>
 
@@ -300,24 +304,38 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 /* ---------- Les 18 cartes du design ---------- */
 const mk=(id,num,title,desc,src,color,x,y,w,h)=>({id,num,title,desc,src,color,x,y,w,h,h0:h,w0:w});
 const BASE=[
- mk('p10','10','Non-discrimination','Aucune décision fondée sur un critère interdit : origine, sexe, âge, handicap…','Code du travail, art. L1132-1','#FB75DE',2250,417,645,433),
- mk('p11a','11','Inclusion et handicap','Un test décrit des préférences du moment.\nIl ne mesure ni la compétence ni la valeur.','Agefiph, 2023','#FF9BE9',2895,417,645,433),
- mk('p09','09','Adapter sa communication','Même message, même exigence, autre formulation selon la personne.','Cours','#FFE5F9',2250,850,1317,433),
- mk('pMan','11','Manager','Obtenir un résultat avec d’autres personnes, et les faire grandir en chemin.','Définition de travail du cours','#9F0049',2360,1283,445,530),
- mk('pFay','','Les 5 fonctions de Fayol','Prévoir, organiser, commander, coordonner, contrôler.','Cours','#9F0049',1471,2077,412,458),
- mk('pEis','15','Matrice d’Eisenhower','Trier par urgence et importance : faire, planifier, déléguer, abandonner.','Matrice dite d’Eisenhower','#FB75DE',703,2873,759,401),
+ // Lot 1 à 3 : les 18 cartes du design, à leur place dans la carte d'origine
+ mk('pMan','01','Manager','Obtenir un résultat avec d’autres personnes, et les faire grandir en chemin.','Définition de travail du cours','#9F0049',2360,1283,445,530),
+ mk('pGer','02','Gérer un projet','Conduire un travail temporaire jusqu’à un livrable, dans un délai et un budget.','Définition de travail du cours','#9F0049',1824,3885,445,530),
+ mk('pFay','03','Les 5 fonctions de Fayol','Prévoir, organiser, commander, coordonner, contrôler.','Fayol, 1916','#9F0049',1471,2077,412,458),
  mk('pDA','04','DA-manager','Le directeur artistique qui ne fait plus tout lui-même : il fait réussir les autres.','Cours','#9F0049',1462,2873,509,401),
- mk('pCon','11','Constituer l’équipe','Partir des compétences requises par le projet, pas des affinités.','Référentiel RNCP 38942, C3.1','#9F0049',3262,1878,445,530),
- mk('pSwot','14','SWOT','Forces et faiblesses (internes), opportunités et menaces (externes).','Outil d’analyse stratégique, années 1960','#9E960A',3707,1878,500,530),
- mk('pSec','11','Se connaître','Savoir ce que l’on apporte et ce qui nous met en difficulté, avant de diriger.','Goleman, 2000 : conscience de soi','#9F0049',3262,2852,445,530),
+ mk('pCon','05','Constituer l’équipe','Partir des compétences requises par le projet, pas des affinités.','Référentiel RNCP 38942, C3.1','#9F0049',3262,1878,445,530),
+ mk('pSec','06','Se connaître','Savoir ce que l’on apporte et ce qui nous met en difficulté, avant de diriger.','Goleman, 2000 : conscience de soi','#9F0049',3262,2852,445,530),
  mk('pDisc','07','DISC','Quatre préférences de comportement : Dominance, Influence, Stabilité, Conformité.','D’après Marston, 1928','#CCC20E',3707,2852,629,530),
- mk('pCtr','11','Contrat d’équipe','Les règles que l’équipe se donne : décider, alerter, être en désaccord, rater.','Cours','#FEFAB0',3262,3382,445,530),
- mk('pLim','07','Limites des tests','Un test décrit des préférences du moment.\nIl ne mesure ni la compétence ni la valeur.','Pittenger, 2005 (sur le MBTI)','#F3EA5B',3707,3382,629,530),
- mk('pGer','11','Gérer un projet','Conduire un travail temporaire jusqu’à un livrable, dans un délai et un budget.','Définition de travail du cours','#9F0049',1824,3885,445,530),
- mk('pCha','17','Charge équilibrée','Répartir selon les compétences et la charge réelle, pas selon qui dit oui.','Référentiel RNCP 38942, C3.3','#81CFF4',2269,3885,645,530),
+ mk('pLim','08','Limites des tests','Un test décrit des préférences du moment. Il ne mesure ni la compétence ni la valeur.','Pittenger, 2005 (sur le MBTI)','#F3EA5B',3707,3382,629,530),
+ mk('p09','09','Adapter sa communication','Même message, même exigence, autre formulation selon la personne.','Cours','#FFE5F9',2250,850,1317,433),
+ mk('p10','10','Non-discrimination','Aucune décision fondée sur un critère interdit : origine, sexe, âge, handicap…','Code du travail, art. L1132-1','#FB75DE',2250,417,645,433),
+ mk('p11a','11','Inclusion et handicap','Aménager le poste et les méthodes pour que chacun puisse contribuer.','Agefiph, 2023','#FF9BE9',2895,417,645,433),
+ mk('pCtr','12','Contrat d’équipe','Les règles que l’équipe se donne : décider, alerter, être en désaccord, rater.','Cours','#FEFAB0',3262,3382,445,530),
  mk('pObj','13','Objectif clair (SMART)','Spécifique, mesurable, attribuable, réaliste, daté.','Doran, 1981','#B1E6FF',2269,4415,645,536),
+ mk('pSwot','14','SWOT','Forces et faiblesses (internes), opportunités et menaces (externes).','Outil d’analyse stratégique, années 1960','#9E960A',3707,1878,500,530),
+ mk('pEis','15','Matrice d’Eisenhower','Trier par urgence et importance : faire, planifier, déléguer, abandonner.','Matrice dite d’Eisenhower','#FB75DE',703,2873,759,401),
+ mk('pRaci','16','RACI','Qui **Réalise**, qui **Approuve** (un seul), qui est **Consulté**, qui est **Informé**.','Matrice des responsabilités','#EBF9FF',2269,4951,1338,550),
+ mk('pCha','17','Charge équilibrée','Répartir selon les compétences et la charge réelle, pas selon qui dit oui.','Référentiel RNCP 38942, C3.3','#81CFF4',2269,3885,645,530),
  mk('pRit','18','Rituels','Des rendez-vous courts et tenus : point du matin, revue critique, bilan.','Cours','#D3F1FF',2914,4415,693,536),
- mk('pRaci','16','RACI','Qui **Réalise**,\nQui **Approuve** (un seul),\nQui est **Consulté**,\nQui est **Informé**.','Matrice des responsabilités','#EBF9FF',2269,4951,1338,550),
+ // Lot 4 et 5 : les 12 cartes ajoutées au kit, posées en réserve sous la carte d'origine
+ mk('k19','19','6 styles de Goleman','Coercitif, visionnaire, affiliatif, démocratique, meneur d’allure, coach.','Goleman, 2000','#FC5912',700,6000,445,530),
+ mk('k20','20','Leadership situationnel','Adapter son style à l’autonomie de la personne, tâche par tâche.','Hersey & Blanchard, 1969','#FE8D5D',1300,6000,445,530),
+ mk('k21','21','Intelligence émotionnelle','Conscience de soi, maîtrise de soi, motivation, empathie, aptitudes sociales.','Goleman, 2000','#FFB18F',1900,6000,445,530),
+ mk('k22','22','DESC','Décrire, Exprimer, Spécifier, Conséquences.','Bower & Bower, 1976','#FFD9C9',2500,6000,445,530),
+ mk('k23','23','Formule en 4 temps','Micro-oui, fait précis, impact, question.','Renninger, TED, 2020','#FE8D5D',3100,6000,445,530),
+ mk('k24','24','Recevoir un feedback','Écouter, reformuler, remercier, décider ensuite.','Cours','#FFB18F',3700,6000,445,530),
+ mk('k25','25','Sécurité psychologique','La conviction partagée que l’on peut prendre un risque devant l’équipe.','Edmondson, 1999','#9E960A',700,6700,445,530),
+ mk('k26','26','Pièges du brainstorming','Attendre son tour, craindre le jugement, se reposer sur les autres.','Diehl & Stroebe, 1987','#CCC20E',1300,6700,445,530),
+ mk('k27','27','Brainwriting 6-3-5','Chacun écrit 3 idées, puis passe sa feuille : on construit sur l’écrit des autres.','Rohrbach, fin des années 1960','#F3EA5B',1900,6700,445,530),
+ mk('k28','28','7 règles d’IDEO','Différer le jugement, viser la quantité, rebondir sur les idées des autres…','IDEO U','#FEFAB0',2500,6700,445,530),
+ mk('k29','29','6 chapeaux','Penser tous dans la même direction, une couleur à la fois.','de Bono, 1985','#CCC20E',3100,6700,445,530),
+ mk('k30','30','Homéostasie d’équipe','Un groupe tend à revenir à ses habitudes, même après avoir dit oui.','Lecerf-Thomas, 2009','#F3EA5B',3700,6700,445,530),
 ];
 const BASE_IDS=new Set(BASE.map(p=>p.id));
 /* Jonctions du design : relation, et encoche (qui porte la bosse, à quelle distance du début du bord commun) */
@@ -528,6 +546,7 @@ function fitText(el,p,pb){
   const need=()=>{const l=c.lastElementChild;return l?l.offsetTop+l.offsetHeight:0;};
   const wide=()=>[...c.children].some(x=>x.scrollWidth>x.clientWidth+1);
   for(let i=0;i<14&&(need()>p.h-pb||wide())&&k>.45;i++){k-=.05;c.style.setProperty('--k',k.toFixed(2));}
+  if(wide()) c.querySelectorAll('.ttl').forEach(t=>{t.style.overflowWrap='anywhere';});
 }
 let orderSig='';
 function renderPieces(contacts=computeContacts(S.pieces)){
@@ -839,14 +858,26 @@ function doShuffle(){
 }
 function doSolution(){
   pushHistory();
+  if(REF){
+    const st=unpackBoard(REF.data), have=new Set(st.pieces.map(p=>p.id));
+    const rest=S.pieces.filter(p=>!have.has(p.id)); let y=Math.min(...st.pieces.map(p=>p.y),0);
+    rest.forEach(p=>{p.h=p.h0||p.h;p.w=p.w0||p.w;p.x=Math.min(...st.pieces.map(q=>q.x))-900-p.w;p.y=y;y+=p.h+260;});
+    S={pieces:[...st.pieces,...rest],meta:st.meta,arrows:st.arrows}; sel=null; commit(false); fitView();
+    toast('Voici la version de référence.',true); return;
+  }
   const custom=S.pieces.filter(p=>!BASE_IDS.has(p.id));
   let y=417; custom.forEach(p=>{p.h=p.h0||p.h;p.w=p.w0||p.w;p.x=-900-p.w;p.y=y;y+=p.h+260;});
   S={pieces:[...clone(BASE),...custom],meta:clone(SOL_META),arrows:clone(SOL_ARROWS)}; sel=null; commit(false); fitView();
   toast('Voici la carte du design.',true);
 }
+function solution(){
+  if(REF){const st=unpackBoard(REF.data);return {pieces:st.pieces,rel:Object.entries(st.meta).filter(([,m])=>m&&m.type),arrows:st.arrows};}
+  return {pieces:BASE,rel:SOL_REL,arrows:SOL_ARROWS};
+}
 function verify(){
-  const solP=Object.fromEntries(BASE.map(p=>[p.id,p]));
-  const solC=computeContacts(BASE), cur=new Set(computeContacts(S.pieces).map(c=>c.key));
+  const SOLN=solution();
+  const solP=Object.fromEntries(SOLN.pieces.map(p=>[p.id,p]));
+  const solC=computeContacts(SOLN.pieces), cur=new Set(computeContacts(S.pieces).map(c=>c.key));
   let asm=0,rel=0;
   const okKey=new Set();
   for(const c of solC){
@@ -856,11 +887,11 @@ function verify(){
     const sideSol=edgeContact(solP[a],solP[b]).sa, now=edgeContact(A,B);
     if(now&&now.sa===sideSol){asm++;okKey.add(c.key);}
   }
-  for(const [k,m] of SOL_REL) if(okKey.has(k)&&S.meta[k]&&S.meta[k].type===m.type) rel++;
-  const arr=SOL_ARROWS.filter(s=>S.arrows.some(a=>a.from===s.from&&a.to===s.to&&a.kw===s.kw)).length;
-  return {asm,asmTot:solC.length,rel,relTot:SOL_REL.length,arr,arrTot:SOL_ARROWS.length};
+  for(const [k,m] of SOLN.rel) if(okKey.has(k)&&S.meta[k]&&S.meta[k].type===m.type) rel++;
+  const arr=SOLN.arrows.filter(s=>S.arrows.some(a=>a.from===s.from&&a.to===s.to&&a.kw===s.kw)).length;
+  return {asm,asmTot:solC.length,rel,relTot:SOLN.rel.length,arr,arrTot:SOLN.arrows.length};
 }
-function updateProgress(){const v=verify();$('progTxt').textContent=`${v.asm} / ${v.asmTot} assemblages`;}
+function updateProgress(){const v=verify();$('progTxt').textContent=`${v.asm} / ${v.asmTot} assemblages`+(REF?' · référence du groupe':'');}
 function doVerify(){
   const v=verify(), all=v.asm===v.asmTot&&v.rel===v.relTot&&v.arr===v.arrTot;
   toast(all?'Carte reconstituée : assemblages, jonctions et flèches sont justes.':`Assemblages ${v.asm}/${v.asmTot} · Jonctions ${v.rel}/${v.relTot} · Flèches ${v.arr}/${v.arrTot}`);
@@ -1329,6 +1360,8 @@ $('bRedo').onclick=redo;
 $('bHelp').onclick=openIntro;
 $('bData').onclick=openData;
 $('bShare').onclick=openShare;
+$('bSave').onclick=openSaves;
+$('bSettings').onclick=openSettings;
 if(window.PUZZLE_ONLINE){$('bShare').hidden=false;$('bData').hidden=true;}
 window.addEventListener('resize',()=>{closePop();if(!userView)fitView();if(editor&&$('edCard')){readEd();renderEdCard(false);}});
 
@@ -1487,6 +1520,124 @@ function openIntro(){
   setTimeout(()=>$('iName').focus(),30);
 }
 
+/* ---------- Versions enregistrées et version de référence ---------- */
+let SAVES=[], REF=null;
+const LS_SAVES='puzzle-manager-versions', LS_REF='puzzle-manager-reference';
+/* un plateau compact : les cartes du kit ne gardent que leur place, les cartes créées gardent tout */
+function packBoard(){
+  return {p:S.pieces.filter(x=>BASE_IDS.has(x.id)).map(x=>[x.id,Math.round(x.x),Math.round(x.y),x.w,x.h]),
+    c:S.pieces.filter(x=>!BASE_IDS.has(x.id)).map(x=>pieceData(x)&&{id:x.id,...pieceData(x)}),meta:clone(S.meta),arrows:clone(S.arrows)};
+}
+function unpackBoard(d){
+  const pieces=[];
+  (Array.isArray(d&&d.p)?d.p:[]).forEach(r=>{if(!Array.isArray(r))return;const b=BASE.find(x=>x.id===r[0]);if(!b)return;const cur=byId(b.id)||b;
+    pieces.push({...clone(cur),x:+r[1]||0,y:+r[2]||0,w:clamp(+r[3]||b.w,200,2000),h:clamp(+r[4]||b.h,200,2000),w0:cur.w0||b.w,h0:cur.h0||b.h});});
+  (Array.isArray(d&&d.c)?d.c:[]).forEach(c=>{if(c&&typeof c.id==='string'&&/^[A-Za-z0-9_.~:@+-]{1,80}$/.test(c.id))pieces.push(cleanPiece(c.id,c));});
+  const L=cleanLinks({meta:d&&d.meta,arrows:d&&d.arrows});
+  return {pieces,meta:L.meta,arrows:L.arrows};
+}
+const verId=()=>'v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+function readLocal(k,f){try{const v=JSON.parse(localStorage.getItem(k)||'null');return v==null?f:v;}catch(_){return f;}}
+function writeLocal(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(_){}}
+async function saveVersion(name){
+  const v={name:String(name||'').slice(0,60)||defaultVersionName(),at:new Date().toISOString(),by:me?me.name:'',data:packBoard()};
+  const id=verId();
+  if(sync.db&&sync.ready){await sync.db.doc('saves/'+id).set(v);}
+  else{const l=readLocal(LS_SAVES,[]);l.unshift({id,...v});writeLocal(LS_SAVES,l.slice(0,30));SAVES=l.slice(0,30);}
+  return id;
+}
+async function deleteVersion(id){
+  if(sync.db&&sync.ready) await sync.db.doc('saves/'+id).delete();
+  else{SAVES=readLocal(LS_SAVES,[]).filter(v=>v.id!==id);writeLocal(LS_SAVES,SAVES);}
+}
+function restoreVersion(v){
+  pushHistory();
+  const st=unpackBoard(v.data); S={pieces:st.pieces,meta:st.meta,arrows:st.arrows}; sel=null;
+  commit(false); fitView(); toast(`Version « ${v.name} » ouverte.`,true);
+}
+async function setReference(on){
+  const v=on?{at:new Date().toISOString(),by:me?me.name:'',data:packBoard()}:null;
+  if(sync.db&&sync.ready){if(v)await sync.db.doc('board/reference').set(v);else await sync.db.doc('board/reference').delete();}
+  else writeLocal(LS_REF,v);
+  REF=v; updateProgress();
+}
+const defaultVersionName=()=>'Version du '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+const fmtDate=iso=>{try{return new Date(iso).toLocaleString('fr-FR',{day:'2-digit',month:'long',hour:'2-digit',minute:'2-digit'});}catch(_){return '';}};
+function listenVersions(db){
+  db.collection('saves').onSnapshot(snap=>{
+    SAVES=snap.docs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()})).filter(v=>v&&v.data).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+    if(!$('modal').hidden&&$('verList')) renderVersionList();
+  },()=>{});
+  db.doc('board/reference').onSnapshot(d=>{REF=d.exists&&d.data()&&d.data().data?d.data():null;updateProgress();if($('refState'))renderSettingsRef();},()=>{});
+}
+function openSaves(){
+  openModal(`<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="svT" style="max-width:640px"><div class="data">
+    <h2 id="svT">Enregistrer notre travail</h2>
+    <div class="hint">Une version garde tout le plateau à cet instant : cartes, jonctions et flèches. Elle est partagée avec tout le groupe, et chacun peut la rouvrir.</div>
+    <form id="svForm" style="display:flex;gap:8px;flex-wrap:wrap"><input id="svName" maxlength="60" placeholder="${esc(defaultVersionName())}" aria-label="Nom de la version" style="flex:1;min-width:0;font:inherit;font-size:15px;border:0;background:var(--mist);padding:12px"><button class="btn wine" type="submit">Enregistrer</button></form>
+    <div class="hint" id="svMsg" role="status"></div>
+    <div class="lt" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;margin-top:6px">Versions enregistrées</div>
+    <div id="verList" style="display:flex;flex-direction:column;gap:2px;max-height:340px;overflow:auto"></div>
+    <div class="acts"><button class="btn" id="svClose">Fermer</button></div>
+  </div></div>`);
+  $('svClose').onclick=closeModal;
+  $('svForm').onsubmit=async e=>{e.preventDefault();const n=$('svName').value.trim();$('svMsg').textContent='Enregistrement…';
+    try{await saveVersion(n);$('svName').value='';$('svMsg').textContent='Version enregistrée.';renderVersionList();}catch(err){$('svMsg').textContent='La version n’a pas pu être enregistrée. Vérifie ta connexion et réessaie.';}};
+  if(!sync.db) SAVES=readLocal(LS_SAVES,[]);
+  renderVersionList(); setTimeout(()=>$('svName').focus(),30);
+}
+function renderVersionList(){
+  const box=$('verList'); if(!box) return;
+  if(!SAVES.length){box.innerHTML='<div class="hint" style="padding:10px 0">Aucune version pour l’instant. Donne-lui un nom (« avant la pause », « proposition du groupe 5 ») et clique sur Enregistrer.</div>';return;}
+  box.innerHTML=SAVES.map(v=>`<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--mist)">
+    <div style="flex:1;min-width:0"><div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.name)}</div><div class="hint" style="font-size:12px">${esc(fmtDate(v.at))}${v.by?' · '+esc(v.by):''}</div></div>
+    <button class="btn" data-open="${esc(v.id)}">Ouvrir</button><button class="btn" data-del="${esc(v.id)}" aria-label="Supprimer la version">Supprimer</button></div>`).join('');
+  box.onclick=async e=>{const o=e.target.closest('[data-open]'),d=e.target.closest('[data-del]');
+    if(o){const v=SAVES.find(x=>x.id===o.dataset.open);if(v){closeModal();restoreVersion(v);}}
+    if(d){if(d.dataset.sure!=='1'){d.dataset.sure='1';d.textContent='Confirmer';return;}try{await deleteVersion(d.dataset.del);}catch(_){}renderVersionList();}};
+}
+function openSettings(){
+  const missing=BASE.filter(b=>!byId(b.id)).length;
+  const old=BASE.filter(b=>{const p=byId(b.id);return p&&(p.num!==b.num||p.title!==b.title||p.desc!==b.desc||p.src!==b.src);}).length;
+  openModal(`<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="stT" style="max-width:640px"><div class="data">
+    <h2 id="stT">Paramètres</h2>
+    <div class="lt" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55">Cartes du kit</div>
+    <div class="hint">Le plateau compte ${BASE.length-missing} carte${BASE.length-missing>1?'s':''} du kit sur ${BASE.length}.${old?` ${old} carte${old>1?'s ont':' a'} encore l’ancien numéro ou l’ancien texte.`:''}</div>
+    <div class="acts" style="justify-content:flex-start">${missing||old?`<button class="btn wine" id="stKit">Passer au kit des ${BASE.length} cartes</button>`:'<span class="hint">Le plateau est à jour.</span>'}</div>
+    <div class="rule" style="height:1px;background:var(--ink);opacity:.12;margin:6px 0"></div>
+    <div class="lt" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55">Version de référence</div>
+    <div class="hint" id="refState"></div>
+    <div class="acts" style="justify-content:flex-start" id="refActs"></div>
+    <div class="rule" style="height:1px;background:var(--ink);opacity:.12;margin:6px 0"></div>
+    <div class="acts" style="justify-content:space-between"><button class="btn" id="stData">Exporter ou importer le plateau</button><button class="btn" id="stClose">Fermer</button></div>
+  </div></div>`);
+  $('stClose').onclick=closeModal; $('stData').onclick=()=>{closeModal();openData();};
+  if($('stKit')) $('stKit').onclick=()=>{upgradeKit();closeModal();};
+  renderSettingsRef();
+}
+function renderSettingsRef(){
+  const st=$('refState'), ac=$('refActs'); if(!st) return;
+  st.textContent=REF?`Vérifier et Solution comparent le plateau à la version de référence enregistrée le ${fmtDate(REF.at)}${REF.by?' par '+REF.by:''}.`
+    :`Vérifier et Solution comparent le plateau à la carte du design d’origine (18 cartes, 15 assemblages). Quand votre carte est prête, faites-en la nouvelle référence.`;
+  ac.innerHTML=`<button class="btn wine" id="refSet">${REF?'Remplacer par le plateau actuel':'Faire de ce plateau la version de référence'}</button>${REF?'<button class="btn" id="refOff">Revenir au design d’origine</button>':''}`;
+  $('refSet').onclick=async()=>{const b=$('refSet');if(b.dataset.sure!=='1'){b.dataset.sure='1';b.textContent='Confirmer : ce plateau devient la référence';return;}
+    try{await setReference(true);toast('Ce plateau est maintenant la version de référence.');}catch(_){toast('La référence n’a pas pu être enregistrée. Réessaie.');}renderSettingsRef();};
+  if($('refOff')) $('refOff').onclick=async()=>{try{await setReference(false);toast('Retour à la carte du design d’origine.');}catch(_){}renderSettingsRef();};
+}
+/* passe le plateau au kit complet : textes et numéros à jour, cartes manquantes posées sur une place libre */
+function upgradeKit(){
+  pushHistory();
+  BASE.forEach(b=>{const p=byId(b.id);if(p)Object.assign(p,{num:b.num,title:b.title,desc:b.desc,src:b.src});});
+  const add=BASE.filter(b=>!byId(b.id)).map(b=>clone(b));
+  if(add.length){
+    let x1=Infinity,y2=-Infinity;S.pieces.forEach(p=>{x1=Math.min(x1,p.x);y2=Math.max(y2,p.y+p.h);});
+    if(!isFinite(x1)){x1=0;y2=0;}
+    add.forEach((p,i)=>{p.x=Math.round(x1+(i%6)*600);p.y=Math.round(y2+400+Math.floor(i/6)*700);S.pieces.push(p);moveToFree([p.id],Math.PI/2);});
+  }
+  sel=null; commit(); fitView();
+  toast(add.length?`${add.length} carte${add.length>1?'s':''} ajoutée${add.length>1?'s':''} sous le plateau, textes mis à jour.`:'Textes et numéros des cartes mis à jour.',true);
+}
+
 /* ---------- Plateau partagé (db) ---------- */
 const validColor=c=>typeof c==='string'&&/^#[0-9A-Fa-f]{6}$/.test(c);
 const pieceData=p=>({num:p.num,title:p.title,desc:p.desc,src:p.src,color:p.color,x:Math.round(p.x*100)/100,y:Math.round(p.y*100)/100,w:p.w,h:p.h,w0:p.w0||p.w,h0:p.h0||p.h});
@@ -1588,6 +1739,7 @@ async function initCollab(){
   const db=await use('db').catch(()=>null);
   if(!db) return;
   sync.db=db; setSyncLabel('Connexion au plateau partagé…',true);
+  listenVersions(db);
   let gotPieces=false, gotLinks=false, first=true;
   const timer=setTimeout(()=>{if(!sync.ready)setSyncLabel('Plateau partagé injoignable pour l’instant',false);},10000);
   const tryReady=()=>{
@@ -1638,11 +1790,16 @@ const BOARD=(()=>{try{const b=new URLSearchParams(location.search).get('b');retu
 function makeOnline(cfg){
   const sb=window.supabase.createClient(cfg.url,cfg.key,{realtime:{params:{eventsPerSecond:20}}});
   const T='puzzle_items';
-  const rows=new Map(); const lis={piece:new Set(),links:new Set()}; let loaded=false, loading=null;
-  const snapPieces=()=>{const docs=[...rows.values()].filter(r=>r.kind==='piece').map(r=>({id:r.id,exists:true,data:()=>r.data}));return {docs,size:docs.length,empty:!docs.length,metadata:{fromCache:false,hasPendingWrites:false},docChanges:()=>[]};};
-  const snapLinks=()=>{const r=rows.get('links');return {id:'links',exists:!!r,data:()=>r&&r.data,metadata:{fromCache:false,hasPendingWrites:false}};};
+  /* une ligne par carte (kind piece) ; jonctions, référence et versions en lignes « links » nommées */
+  const rows=new Map(); const lis={piece:new Set(),saves:new Set(),docs:new Map()}; let loaded=false, loading=null;
+  const keyOf=(col,id)=>col==='pieces'?id:col==='saves'?'save-'+id:id;
+  const kindOf=col=>col==='pieces'?'piece':'links';
+  const META={fromCache:false,hasPendingWrites:false};
+  const snapPieces=()=>{const docs=[...rows.values()].filter(r=>r.kind==='piece').map(r=>({id:r.id,exists:true,data:()=>r.data}));return {docs,size:docs.length,empty:!docs.length,metadata:META,docChanges:()=>[]};};
+  const snapSaves=()=>{const docs=[...rows.values()].filter(r=>r.kind!=='piece'&&String(r.id).startsWith('save-')).map(r=>({id:r.id.slice(5),exists:true,data:()=>r.data}));return {docs,size:docs.length,empty:!docs.length,metadata:META,docChanges:()=>[]};};
+  const snapDoc=k=>{const r=rows.get(k);return {id:k,exists:!!r,data:()=>r&&r.data,metadata:META};};
   let emitT=0;
-  const emit=()=>{if(!loaded||emitT)return;emitT=setTimeout(()=>{emitT=0;lis.piece.forEach(f=>f(snapPieces()));lis.links.forEach(f=>f(snapLinks()));},40);};
+  const emit=()=>{if(!loaded||emitT)return;emitT=setTimeout(()=>{emitT=0;lis.piece.forEach(f=>f(snapPieces()));lis.saves.forEach(f=>f(snapSaves()));lis.docs.forEach((set,k)=>set.forEach(f=>f(snapDoc(k))));},40);};
   const load=()=>loading||(loading=(async()=>{
     sb.channel('db:'+BOARD).on('postgres_changes',{event:'*',schema:'public',table:T},pl=>{
       const r=pl.eventType==='DELETE'?pl.old:pl.new; if(!r||r.board!==BOARD)return;
@@ -1654,24 +1811,24 @@ function makeOnline(cfg){
   })());
   const fail=e=>{const m=String(e&&(e.message||e.code)||'');return {code:/permission|denied|policy|42501/i.test(m)?'not_granted':'unavailable',message:m};};
   const docRef=path=>{
-    const [col,id]=path.split('/'); const kind=col==='board'?'links':'piece';
+    const [col,id]=path.split('/'), k=keyOf(col,id), kind=kindOf(col);
     return {
-      async set(data){const {error}=await sb.from(T).upsert({board:BOARD,kind,id,data,updated_at:new Date().toISOString()});if(error)throw fail(error);rows.set(id,{board:BOARD,kind,id,data});},
-      async delete(){const {error}=await sb.from(T).delete().eq('board',BOARD).eq('id',id);if(error)throw fail(error);rows.delete(id);},
-      onSnapshot(next,err){lis.links.add(next);load().then(()=>next(snapLinks()),e=>err&&err(fail(e)));return ()=>lis.links.delete(next);}
+      async set(data){const {error}=await sb.from(T).upsert({board:BOARD,kind,id:k,data,updated_at:new Date().toISOString()});if(error)throw fail(error);rows.set(k,{board:BOARD,kind,id:k,data});emit();},
+      async delete(){const {error}=await sb.from(T).delete().eq('board',BOARD).eq('id',k);if(error)throw fail(error);rows.delete(k);emit();},
+      onSnapshot(next,err){if(!lis.docs.has(k))lis.docs.set(k,new Set());lis.docs.get(k).add(next);load().then(()=>next(snapDoc(k)),e=>err&&err(fail(e)));return ()=>lis.docs.get(k).delete(next);}
     };
   };
   /* un seul aller-retour pour toutes les cartes changées d'un coup */
   async function batch(sets,dels){
     const now=new Date().toISOString();
     if(sets.length){
-      const body=sets.map(([col,id,data])=>({board:BOARD,kind:col==='board'?'links':'piece',id,data,updated_at:now}));
+      const body=sets.map(([col,id,data])=>({board:BOARD,kind:kindOf(col),id:keyOf(col,id),data,updated_at:now}));
       const {error}=await sb.from(T).upsert(body); if(error) throw fail(error);
       body.forEach(r=>rows.set(r.id,r));
     }
     if(dels.length){const {error}=await sb.from(T).delete().eq('board',BOARD).in('id',dels);if(error)throw fail(error);dels.forEach(id=>rows.delete(id));}
   }
-  const db={batch,doc:docRef,collection:()=>({onSnapshot(next,err){lis.piece.add(next);load().then(()=>next(snapPieces()),e=>err&&err(fail(e)));return ()=>lis.piece.delete(next);}})};
+  const db={batch,doc:docRef,collection:name=>({onSnapshot(next,err){const set=name==='saves'?lis.saves:lis.piece;set.add(next);load().then(()=>next(name==='saves'?snapSaves():snapPieces()),e=>err&&err(fail(e)));return ()=>set.delete(next);}})};
 
   /* Salle : qui est là (presence) et où est chacun (broadcast, dix fois par seconde au plus) */
   const myPeer=Math.random().toString(36).slice(2,12);
@@ -1784,6 +1941,7 @@ function start(data){
   renderAll();
   if(data&&data.view){view=data.view;applyView();}else fitView();
   if(!me) openIntro();
+  SAVES=readLocal(LS_SAVES,[]); REF=readLocal(LS_REF,null); updateProgress();
   initCollab();
 }
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({S:JSON.parse(snapshot()),view}));}catch(_){}
