@@ -1,4 +1,4 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script>window.PUZZLE_ONLINE={url:"https://yxiepghguruiayjiwmgg.supabase.co",key:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4aWVwZ2hndXJ1aWF5aml3bWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUwODgzOTMsImV4cCI6MjExMDY2NDM5M30.rWhQMDh0NGD0xZKaOlzog9u6TvaBW73IKw2DgXwf-2s"};</script></head><body><title>Puzzle du manager</title>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script>window.PUZZLE_ONLINE={url:"https://yxiepghguruiayjiwmgg.supabase.co",key:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4aWVwZ2hndXJ1aWF5aml3bWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUwODgzOTMsImV4cCI6MjExMDY2NDM5M30.rWhQMDh0NGD0xZKaOlzog9u6TvaBW73IKw2DgXwf-2s"};</script></head><body><title>Le management, pièces par pièces</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Layout : plateau infini blanc du design, cartes au pixel près, outils en bas, légende des liaisons à gauche */
@@ -55,7 +55,7 @@ button{font:inherit;color:inherit}
 /* Interface */
 .panel{position:fixed;background:#fff;box-shadow:0 10px 34px var(--shade);z-index:20}
 /* En haut à gauche : le logo, qui ouvre le menu (infos, manifeste, métaphore, sources) */
-#head{top:calc(16px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));padding:0;background:transparent;box-shadow:none;max-width:calc(100% - 32px)}
+#head{top:calc(16px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));padding:0;background:transparent;box-shadow:none;max-width:calc(100% - 32px);z-index:26}
 #bMenu{display:flex;align-items:center;gap:10px;border:0;padding:7px 14px 7px 7px;background:#fff;box-shadow:0 10px 34px var(--shade);cursor:pointer;border-radius:18px}
 #bMenu .katr{width:46px;height:46px;display:block;flex:none}
 #bMenu .bg{width:22px;height:16px;position:relative;flex:none}
@@ -65,18 +65,20 @@ button{font:inherit;color:inherit}
 #bMenu[aria-expanded="true"] .bg i:nth-child(2){opacity:0}
 #bMenu[aria-expanded="true"] .bg i:nth-child(3){top:6.75px;transform:rotate(-45deg)}
 #bMenu:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
-#menuPanel{position:absolute;left:0;top:calc(100% + 10px);width:340px;max-width:calc(100vw - 32px);background:#fff;box-shadow:0 18px 50px rgba(17,17,17,.22);padding:18px 10px 10px;box-sizing:border-box;animation:mp-in .18s cubic-bezier(.2,.9,.3,1);transform-origin:0 0}
+#menuPanel{position:absolute;left:0;top:calc(100% + 8px);width:288px;max-width:calc(100vw - 32px);max-height:calc(100vh - 100px);max-height:calc(100dvh - 100px);overflow:auto;background:#fff;box-shadow:0 18px 50px rgba(17,17,17,.22);padding:12px 6px 6px;box-sizing:border-box;animation:mp-in .18s cubic-bezier(.2,.9,.3,1);transform-origin:0 0}
 @keyframes mp-in{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
-.mp-head{padding:0 10px 14px;display:flex;flex-direction:column;gap:4px}
-#head h1{margin:0;font-size:18px;font-weight:500;letter-spacing:.02em;text-transform:uppercase}
-#head .sub{font-size:13px;opacity:.65;line-height:1.35}
-.mp-sp{height:1px;background:var(--ink);opacity:.1;margin:0 10px 6px}
-.mp-it{display:flex;align-items:center;gap:14px;width:100%;border:0;background:transparent;padding:10px;text-align:left;cursor:pointer;font:inherit;color:var(--ink)}
+.mp-head{padding:0 10px 10px;display:flex;flex-direction:column;gap:3px}
+#head h1{margin:0;font-size:15px;font-weight:500;line-height:1.2;letter-spacing:.02em;text-transform:uppercase}
+#head .sub{font-size:12px;opacity:.65;line-height:1.3}
+#head #prog{font-size:12px;margin-top:3px}
+#head #sync{font-size:11px}
+.mp-sp{height:1px;background:var(--ink);opacity:.1;margin:0 10px 4px}
+.mp-it{display:flex;align-items:center;gap:11px;width:100%;border:0;background:transparent;padding:6px 8px;text-align:left;cursor:pointer;font:inherit;color:var(--ink)}
 .mp-it:hover,.mp-it:focus-visible,.mp-it.on{background:var(--mist);outline:none}
-.mp-it .dot{width:52px;height:52px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-size:7.5px;font-weight:500;letter-spacing:0;text-transform:uppercase}
+.mp-it .dot{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-size:6px;font-weight:500;letter-spacing:0;text-transform:uppercase}
 .mp-it .tx{display:flex;flex-direction:column;gap:2px;min-width:0}
-.mp-it b{font-weight:700;font-size:15px}
-.mp-it small{font-size:12.5px;opacity:.62;line-height:1.3}
+.mp-it b{font-weight:700;font-size:13.5px}
+.mp-it small{font-size:11.5px;opacity:.62;line-height:1.25}
 .mp-it .ar{margin-left:auto;opacity:.35;flex:none}
 
 /* Les cartes du menu, à l'identique du livrable */
@@ -96,11 +98,11 @@ button{font:inherit;color:inherit}
 .ic-wrap.long{width:min(760px,calc(100vw - 32px))}
 .ic-wrap .icard{min-height:0;overflow:auto;overscroll-behavior:contain;box-shadow:0 30px 80px rgba(17,17,17,.3)}
 .ic-close{position:absolute;right:0;top:4px;border:0;background:#fff;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:22px;line-height:1;display:grid;place-items:center;box-shadow:0 6px 18px rgba(17,17,17,.2)}
-#peek{position:fixed;z-index:19;width:430px;pointer-events:none;padding-top:52px;animation:mp-in .16s ease}
+#peek{position:fixed;z-index:19;width:340px;pointer-events:none;padding-top:52px;animation:mp-in .16s ease}
 #peek .icard{max-height:calc(100vh - 140px);overflow:hidden;box-shadow:0 24px 60px rgba(17,17,17,.25);-webkit-mask-image:linear-gradient(#000 calc(100% - 60px),transparent);mask-image:linear-gradient(#000 calc(100% - 60px),transparent)}
 #peek .icard.fits{-webkit-mask-image:none;mask-image:none}
-#peek .badge2{width:88px;height:88px;margin-left:-44px;top:8px;font-size:11px}
-#peek .icard h2{font-size:26px}#peek .icard .st{font-size:16px}#peek .icard p{font-size:13px}#peek .icard ul{font-size:12px}#peek .icard h3{font-size:16px}
+#peek .badge2{width:72px;height:72px;margin-left:-36px;top:16px;font-size:9.5px}
+#peek .icard{padding:56px 28px 26px}#peek .icard h2{font-size:21px;margin-bottom:12px}#peek .icard .st{font-size:13px;margin-bottom:12px}#peek .icard p{font-size:11.5px;margin-bottom:9px}#peek .icard ul{font-size:10.5px}#peek .icard h3{font-size:14px;margin-top:12px}#peek .icard .ft{margin-top:14px;font-size:10px}
 #prog{font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;display:flex;gap:6px;align-items:center;margin-top:4px}
 #prog .dot{width:10px;height:10px;border-radius:50%;background:var(--wine)}
 #topr{top:calc(16px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;padding:6px;gap:2px}
@@ -119,7 +121,12 @@ button{font:inherit;color:inherit}
 .round{width:38px;height:38px;border-radius:50%;border:0;background:var(--mist);cursor:pointer;font-size:20px;line-height:1;flex:none;display:grid;place-items:center}
 .round:hover{background:#E7E7E2}
 #zval{font-size:13px;font-variant-numeric:tabular-nums;width:46px;text-align:center;flex:none}
-#legend{left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:16px 18px;display:flex;flex-direction:column;gap:10px;font-size:14px}
+#legend{left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:10px 12px;display:flex;flex-direction:column;gap:5px;font-size:12px;transition:opacity .15s ease}
+#legend.under{opacity:0;pointer-events:none}
+#legend .lg{gap:8px}
+#legend .lg i{width:18px;height:14px}
+#legend .lg .mini{width:24px;height:24px;font-size:5.5px}
+#legend .lt{font-size:9.5px}
 #legend .lt,.mleg .lt{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55}
 #legend .lg,.mleg .lg{display:flex;align-items:center;gap:12px;font-weight:700}
 #legend .lg i,.mleg .lg i{width:26px;height:22px;display:block;flex:none}
@@ -312,7 +319,7 @@ button{font:inherit;color:inherit}
   <button type="button" id="bMenu" aria-expanded="false" aria-controls="menuPanel" aria-label="Menu : le jeu, le manifeste, la métaphore, les sources"><svg class="katr" xmlns="http://www.w3.org/2000/svg" viewBox="152 88 1101 1154" aria-hidden="true"><rect x="152" y="88" width="1101" height="1154" rx="316" fill="#F3F2EE"/><g fill="#111"><path d="M428 294L535 299L527 406L600 294L717 302L605 459L700 622L592 642L520 543L516 647L420 651Z"/><path fill-rule="evenodd" d="M789 309L918 303L1010 617L894 631L879 579L826 579L815 631L697 620ZM853 427L871 508L836 508Z"/><path d="M414 704L668 703L666 802L597 804L578 1026L481 1031L481 810L411 813Z"/><path fill-rule="evenodd" d="M687 715C730 700 775 694 820 695C900 697 955 745 955 815C955 860 940 885 899 913L953 1014L848 1034L811 933L783 935L779 1033L680 1033ZM791 776L807 774C835 772 850 790 850 818C850 845 825 862 787 863Z"/><circle cx="1012" cy="988" r="49"/></g></svg><span class="bg" aria-hidden="true"><i></i><i></i><i></i></span></button>
   <div id="menuPanel" hidden>
     <div class="mp-head">
-      <h1>Le puzzle du manager</h1>
+      <h1>Le management,<br>pièces par pièces</h1>
       <div class="sub">Reconstituez la carte : emboîtez, qualifiez, reliez.</div>
       <div id="prog"><span class="dot"></span><span id="progTxt">0 / 15 assemblages</span></div>
       <div id="sync" hidden><i></i><span id="syncTxt">Plateau partagé</span></div>
@@ -1568,10 +1575,11 @@ const INFO={
 };
 const infoWrap=(k,extra='',attrs='')=>{const I=INFO[k];return `<div class="ic-wrap${I.long?' long':''}"${attrs}><span class="badge2" style="background:${I.dot}">${esc(I.badge)}</span><article class="icard${I.long?' long':''}" style="--bg:${I.bg}">${I.html}</article>${extra}</div>`;};
 $('mpItems').innerHTML=Object.entries(INFO).map(([k,I])=>`<button type="button" class="mp-it" data-info="${k}"><span class="dot" style="background:${I.dot}">${esc(I.badge)}</span><span class="tx"><b>${esc(I.item)}</b><small>${esc(I.sub)}</small></span><svg class="ar" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`).join('')
-  +`<div class="mp-sp" style="margin-top:6px"></div><button type="button" class="mp-it" data-info="regles"><span class="dot" style="background:var(--wine);font-size:20px;font-weight:700">?</span><span class="tx"><b>Règles du jeu</b><small>Emboîter, qualifier, relier</small></span></button>`;
+  +`<div class="mp-sp" style="margin-top:6px"></div><button type="button" class="mp-it" data-info="regles"><span class="dot" style="background:var(--wine);font-size:18px;font-weight:700">?</span><span class="tx"><b>Règles du jeu</b><small>Emboîter, qualifier, relier</small></span></button>`;
 function setMenu(open){
   $('menuPanel').hidden=!open; $('bMenu').setAttribute('aria-expanded',open?'true':'false');
-  if(!open) hidePeek(); else{closeCtx();closePop();}
+  if(!open){hidePeek();$('legend').classList.remove('under');}
+  else{closeCtx();closePop();const m=$('menuPanel').getBoundingClientRect(),l=$('legend');l.classList.remove('under');const r=l.getBoundingClientRect();if(getComputedStyle(l).display!=='none'&&r.top<m.bottom+8&&r.left<m.right&&r.right>m.left)l.classList.add('under');}
 }
 $('bMenu').onclick=e=>{e.stopPropagation();setMenu($('menuPanel').hidden);};
 window.addEventListener('pointerdown',e=>{if(!$('menuPanel').hidden&&!e.target.closest('#head'))setMenu(false);},true);
@@ -1749,7 +1757,7 @@ function openShare(){
 function openIntro(){
   const col=(me&&me.color)||PLAYER_COLORS[Math.floor(Math.random()*PLAYER_COLORS.length)];
   openModal(`<div class="intro" role="dialog" aria-modal="true" aria-labelledby="iT">
-    <div class="num">00</div><div class="ttl" id="iT">Le puzzle du manager</div>
+    <div class="num">00</div><div class="ttl" id="iT">Le management,<br>pièces par pièces</div>
     <ol>
       <li>Chaque carte est une notion du cours. À vous de décider lesquelles vont ensemble.</li>
       <li>Approchez une carte d’une autre : leurs bords se changent en encoches. Lâchez, elles s’emboîtent. Côte à côte, elles prennent la même hauteur.</li>
