@@ -1,4 +1,4 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script>window.PUZZLE_ONLINE={url:"https://yxiepghguruiayjiwmgg.supabase.co",key:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4aWVwZ2hndXJ1aWF5aml3bWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUwODgzOTMsImV4cCI6MjExMDY2NDM5M30.rWhQMDh0NGD0xZKaOlzog9u6TvaBW73IKw2DgXwf-2s"};</script></head><body><title>Puzzle du manager</title>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script>window.PUZZLE_ONLINE={url:"https://yxiepghguruiayjiwmgg.supabase.co",key:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl4aWVwZ2hndXJ1aWF5aml3bWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUwODgzOTMsImV4cCI6MjExMDY2NDM5M30.rWhQMDh0NGD0xZKaOlzog9u6TvaBW73IKw2DgXwf-2s"};</script></head><body><title>Puzzle du manager</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Layout : plateau infini blanc du design, cartes au pixel près, outils en bas, légende des liaisons à gauche */
@@ -10,7 +10,7 @@
   color-scheme:light;
 }
 [hidden]{display:none!important}
-html,body{height:100%}
+html,body{height:100%;overscroll-behavior:none;touch-action:manipulation}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f);overflow:hidden;-webkit-font-smoothing:antialiased;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 button{font:inherit;color:inherit}
@@ -92,6 +92,16 @@ button{font:inherit;color:inherit}
 #pop .pb.on{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ink)!important}
 #pop .lbl{font-size:12px;opacity:.6;max-width:90px;line-height:1.25;padding:0 4px}
 
+.ctx{position:fixed;z-index:45;background:#fff;box-shadow:0 12px 36px rgba(17,17,17,.22);padding:6px;min-width:230px;max-width:calc(100% - 24px);font-size:14px;user-select:none;-webkit-user-select:none}
+.ctx .it{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:9px 10px;text-align:left;cursor:pointer;font:inherit;font-size:14px;color:var(--ink)}
+.ctx .it:hover,.ctx .it:focus-visible{background:var(--mist);outline:none}
+.ctx .it .k{margin-left:auto;font-size:12px;opacity:.5;font-variant-numeric:tabular-nums;padding-left:18px}
+.ctx .it i{width:14px;height:14px;display:block;flex:none}
+.ctx .it .dot{width:16px;height:16px;border-radius:50%;flex:none;box-shadow:0 1px 4px rgba(17,17,17,.25);background:#fff}
+.ctx .it.on{font-weight:700}
+.ctx .it.danger{color:var(--wine)}
+.ctx .hd{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.5;padding:8px 10px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctx .sp{height:1px;background:var(--ink);opacity:.1;margin:5px 4px}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;padding:12px 16px;font-size:14px;display:flex;gap:14px;align-items:center;z-index:40;max-width:calc(100% - 32px)}
 #toast button{background:transparent;border:0;color:#fff;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;flex:none}
 
@@ -245,6 +255,7 @@ button{font:inherit;color:inherit}
 </nav>
 
 <div class="panel" id="pop" hidden></div>
+<div class="ctx" id="ctx" hidden role="menu"></div>
 <div id="toast" hidden></div>
 <div class="modal" id="modal" hidden></div>
 
@@ -550,31 +561,48 @@ function exitUnion(rects,c,t){
   }
   return p;
 }
+/* Une flèche relie deux groupes : elle sort du bord du groupe qui fait face à l'autre et arrive de face, en courbe douce */
+function bboxOf(ids,g){let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;ids.forEach(id=>{const p=byId(id);if(!p)return;x1=Math.min(x1,p.x);y1=Math.min(y1,p.y);x2=Math.max(x2,p.x+p.w);y2=Math.max(y2,p.y+p.h);});return {x1:x1-g,y1:y1-g,x2:x2+g,y2:y2+g};}
 function arrowGeom(a,G){
   const A=byId(a.from),B=byId(a.to); if(!A||!B) return null;
   const same=G.get(A.id)===G.get(B.id);
-  const rA=[...(same?[A.id]:G.get(A.id))].map(id=>grow(byId(id),GAP));
-  const rB=[...(same?[B.id]:G.get(B.id))].map(id=>grow(byId(id),GAP));
+  const RA=bboxOf(same?[A.id]:G.get(A.id),GAP), RB=bboxOf(same?[B.id]:G.get(B.id),GAP);
   const ca={x:A.x+A.w/2,y:A.y+A.h/2}, cb={x:B.x+B.w/2,y:B.y+B.h/2};
-  const corner=a.flip?{x:cb.x,y:ca.y}:{x:ca.x,y:cb.y};
-  const mid={x:(ca.x+cb.x)/2,y:(ca.y+cb.y)/2};
-  const ctrl={x:mid.x+(corner.x-mid.x)*.85,y:mid.y+(corner.y-mid.y)*.85};
-  const s=exitUnion(rA,ca,rA.some(r=>inR(r,ctrl))?cb:ctrl);
-  const e=exitUnion(rB,cb,rB.some(r=>inR(r,ctrl))?ca:ctrl);
-  return {s,e,ctrl};
+  const gapX=Math.max(RB.x1-RA.x2,RA.x1-RB.x2), gapY=Math.max(RB.y1-RA.y2,RA.y1-RB.y2);
+  let vertical=gapY>=gapX; if(a.flip) vertical=!vertical;
+  const inset=60, cl=(v,lo,hi)=>lo>hi?(lo+hi)/2:clamp(v,lo,hi);
+  let s,e,t1,t2;
+  if(vertical){
+    const down=cb.y>=ca.y;
+    s={x:cl(ca.x,RA.x1+inset,RA.x2-inset),y:down?RA.y2:RA.y1};
+    e={x:cl(cb.x,RB.x1+inset,RB.x2-inset),y:down?RB.y1:RB.y2};
+    if(Math.abs(s.x-e.x)<90){const m=(s.x+e.x)/2;s.x=cl(m,RA.x1+inset,RA.x2-inset);e.x=cl(m,RB.x1+inset,RB.x2-inset);}
+    const k=Math.max(80,Math.abs(e.y-s.y)*.5)*(down?1:-1);
+    t1={x:s.x,y:s.y+k}; t2={x:e.x,y:e.y-k};
+  }else{
+    const right=cb.x>=ca.x;
+    s={x:right?RA.x2:RA.x1,y:cl(ca.y,RA.y1+inset,RA.y2-inset)};
+    e={x:right?RB.x1:RB.x2,y:cl(cb.y,RB.y1+inset,RB.y2-inset)};
+    if(Math.abs(s.y-e.y)<90){const m=(s.y+e.y)/2;s.y=cl(m,RA.y1+inset,RA.y2-inset);e.y=cl(m,RB.y1+inset,RB.y2-inset);}
+    const k=Math.max(80,Math.abs(e.x-s.x)*.5)*(right?1:-1);
+    t1={x:s.x+k,y:s.y}; t2={x:e.x-k,y:e.y};
+  }
+  return {s,e,t1,t2};
 }
-function quadLen(s,c,e){
+function cubicLen(s,c1,c2,e){
   let L=0,px=s.x,py=s.y;
-  for(let i=1;i<=32;i++){const t=i/32,x=(1-t)*(1-t)*s.x+2*(1-t)*t*c.x+t*t*e.x,y=(1-t)*(1-t)*s.y+2*(1-t)*t*c.y+t*t*e.y;L+=Math.hypot(x-px,y-py);px=x;py=y;}
+  for(let i=1;i<=40;i++){const t=i/40,u=1-t,x=u*u*u*s.x+3*u*u*t*c1.x+3*u*t*t*c2.x+t*t*t*e.x,y=u*u*u*s.y+3*u*u*t*c1.y+3*u*t*t*c2.y+t*t*t*e.y;L+=Math.hypot(x-px,y-py);px=x;py=y;}
   return L;
 }
 function arrowSVG(a,G){
   const g=arrowGeom(a,G); if(!g) return '';
-  const k=KW[a.kw]||KW.permet, {s,e,ctrl}=g;
-  const d=`M${s.x} ${s.y} Q${ctrl.x} ${ctrl.y} ${e.x} ${e.y}`;
-  const ld=s.x<=e.x?d:`M${e.x} ${e.y} Q${ctrl.x} ${ctrl.y} ${s.x} ${s.y}`;
+  const k=KW[a.kw]||KW.permet, {s,e,t1,t2}=g;
+  const d=`M${s.x} ${s.y} C${t1.x} ${t1.y} ${t2.x} ${t2.y} ${e.x} ${e.y}`;
+  /* le mot se lit toujours de gauche à droite (et de haut en bas sur une flèche verticale) */
+  const rev=Math.abs(e.x-s.x)>40?e.x<s.x:e.y<s.y;
+  const ld=rev?`M${e.x} ${e.y} C${t2.x} ${t2.y} ${t1.x} ${t1.y} ${s.x} ${s.y}`:d;
   /* Pointillé recalé sur la longueur : il part du premier point et finit pile sur le second */
-  const L=quadLen(s,ctrl,e), n=Math.max(1,Math.round((L-8)/35)), unit=(L-8)/n;
+  const L=cubicLen(s,t1,t2,e), n=Math.max(1,Math.round((L-8)/35)), unit=(L-8)/n;
   const dash=`${(unit*.63).toFixed(2)} ${(unit*.37).toFixed(2)}`;
   const on=sel&&sel.type==='arrow'&&sel.id===a.id;
   return `<g>
@@ -620,7 +648,7 @@ function renderOverlay(contacts=computeContacts(S.pieces)){
     }
   }
   if(drag&&drag.kind==='link'&&drag.cur){
-    const A=byId(drag.from), rA=[...G.get(A.id)].map(id=>grow(byId(id),GAP)), s=exitUnion(rA,{x:A.x+A.w/2,y:A.y+A.h/2},drag.cur);
+    const A=byId(drag.from), RA=bboxOf(G.get(A.id),GAP), s=exitPt(RA,{x:A.x+A.w/2,y:A.y+A.h/2},drag.cur);
     gh+=`<path d="M${s.x} ${s.y} L${drag.cur.x} ${drag.cur.y}" stroke="#111" stroke-width="2" stroke-dasharray="7 6" vector-effect="non-scaling-stroke"/><circle cx="${s.x}" cy="${s.y}" r="16" fill="#111"/><circle cx="${drag.cur.x}" cy="${drag.cur.y}" r="16" fill="#111"/>`;
   }
   setHTML('Lghost',gh);
@@ -897,6 +925,12 @@ vp.addEventListener('pointerdown',e=>{
   const bk=t.closest&&t.closest('.badge'), pidEl=t.closest&&t.closest('[data-pid]'), aidEl=t.closest&&t.closest('[data-aid]');
   if(e.button===1||(e.button===0&&spaceDown)){drag={kind:'pan',sx:e.clientX,sy:e.clientY,tx:view.tx,ty:view.ty};vp.classList.add('panning');capture(e);return;}
   if(e.button!==0&&e.pointerType==='mouse') return;
+  if(drag&&drag.pending){
+    const to=pidEl&&pidEl.dataset.pid, from=drag.from; drag=null;
+    if(to&&to!==from){pushHistory();const a={id:uid('a'),from,to,kw:'permet',flip:false};S.arrows.push(a);sel={type:'arrow',id:a.id};setTool('move');commit();toast('Flèche posée. Choisis son mot-clé en haut : permet, exige ou s’oppose à.');}
+    else{setTool('move');renderOverlay();}
+    return;
+  }
   if(bk){openJunctionPop(bk.dataset.k);return;}
   if(aidEl&&tool==='move'){select({type:'arrow',id:aidEl.dataset.aid});return;}
   if(pidEl){
@@ -973,6 +1007,16 @@ function endPointer(e){
 vp.addEventListener('pointerup',endPointer);
 vp.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!drag)sendPresence({x:null,y:null});});
 vp.addEventListener('pointercancel',endPointer);
+/* la page elle-même ne zoome jamais : pincement, Ctrl + molette et Cmd + / − agissent sur le plateau */
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+document.addEventListener('wheel',e=>{if((e.ctrlKey||e.metaKey)&&!vp.contains(e.target))e.preventDefault();},{passive:false});
+document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});
+window.addEventListener('keydown',e=>{
+  if(!(e.metaKey||e.ctrlKey)) return;
+  if(e.key==='+'||e.key==='='){e.preventDefault();userView=true;zoomAt(innerWidth/2,innerHeight/2,1.25);}
+  else if(e.key==='-'||e.key==='_'){e.preventDefault();userView=true;zoomAt(innerWidth/2,innerHeight/2,.8);}
+  else if(e.key==='0'){e.preventDefault();fitView();}
+},true);
 vp.addEventListener('wheel',e=>{
   e.preventDefault(); userView=true;
   if(e.ctrlKey||e.metaKey) zoomAt(e.clientX,e.clientY,Math.exp(-e.deltaY*.012));
@@ -984,9 +1028,80 @@ vp.addEventListener('gesturechange',e=>{e.preventDefault();zoomAt(e.clientX,e.cl
 vp.addEventListener('gestureend',e=>e.preventDefault());
 vp.addEventListener('dblclick',e=>{const p=e.target.closest&&e.target.closest('[data-pid]');if(p&&tool==='move')openEditor(p.dataset.pid);});
 
+/* ---------- Clic droit ---------- */
+const MOD=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent)?'⌘':'Ctrl ';
+let ctxPlace=null;
+function closeCtx(){$('ctx').hidden=true;}
+function openCtx(x,y,items){
+  const m=$('ctx');
+  m.innerHTML=items.map((it,i)=>it==='-'?'<div class="sp"></div>':it.hd?`<div class="hd">${esc(it.hd)}</div>`:
+    `<button class="it${it.on?' on':''}${it.danger?' danger':''}" role="menuitem" data-i="${i}">${it.sw?`<i style="background:${it.sw}"></i>`:''}${it.dot?`<span class="dot"></span>`:''}<span>${esc(it.label)}</span>${it.k?`<span class="k">${esc(it.k)}</span>`:''}</button>`).join('');
+  m.hidden=false;
+  const r=m.getBoundingClientRect();
+  m.style.left=clamp(x,8,innerWidth-r.width-8)+'px'; m.style.top=clamp(y,8,innerHeight-r.height-8)+'px';
+  m.onclick=e=>{const b=e.target.closest('[data-i]');if(!b)return;const it=items[+b.dataset.i];closeCtx();it.run&&it.run();};
+  const f=m.querySelector('.it'); f&&f.focus({preventScroll:true});
+}
+function startLinkFrom(pid){
+  setTool('link'); drag={kind:'link',from:pid,cur:null,pending:true}; sel=null; renderSelbar();
+  toast('Clique sur la carte à relier. Échap pour annuler.');
+}
+vp.addEventListener('contextmenu',e=>{
+  e.preventDefault(); if(!$('modal').hidden) return;
+  closePop();
+  const t=e.target, bk=t.closest&&t.closest('.badge'), pidEl=t.closest&&t.closest('[data-pid]'), aidEl=t.closest&&t.closest('[data-aid]');
+  const wpos=toWorld(e.clientX,e.clientY);
+  if(bk){
+    const k=bk.dataset.k, cur=S.meta[k]&&S.meta[k].type;
+    const setT=v=>()=>{pushHistory();S.meta[k]=S.meta[k]||{};if(v)S.meta[k].type=v;else delete S.meta[k].type;commit();};
+    openCtx(e.clientX,e.clientY,[{hd:'Cette pièce…'},{label:'EXIGE sa voisine',dot:1,on:cur==='EXIGE',run:setT('EXIGE')},{label:'PERMET sa voisine',dot:1,on:cur==='PERMET',run:setT('PERMET')},{label:'Aucune relation',on:!cur,run:setT('')}]);
+    return;
+  }
+  if(aidEl){
+    const a=S.arrows.find(x=>x.id===aidEl.dataset.aid); if(!a) return;
+    select({type:'arrow',id:a.id});
+    const upd=f=>()=>{pushHistory();f(a);commit();};
+    openCtx(e.clientX,e.clientY,[{hd:'Flèche'},
+      ...Object.entries(KW).map(([k,v])=>({label:v.word,sw:v.line,on:a.kw===k,run:upd(x=>{x.kw=k;})})),'-',
+      {label:'Inverser le sens',run:upd(x=>{const f=x.from;x.from=x.to;x.to=f;})},
+      {label:'Changer de côté',run:upd(x=>{x.flip=!x.flip;})},'-',
+      {label:'Supprimer la flèche',k:'⌫',danger:1,run:deleteSel}]);
+    return;
+  }
+  if(pidEl){
+    const pid=pidEl.dataset.pid, p=byId(pid); if(!p) return;
+    select({type:'piece',id:pid});
+    const inGroup=groupOf(pid).size>1;
+    openCtx(e.clientX,e.clientY,[{hd:(p.num?p.num+' · ':'')+p.title},
+      {label:'Modifier',k:'Entrée',run:()=>openEditor(pid)},
+      {label:'Dupliquer',k:MOD+'D',run:()=>duplicatePiece(pid)},
+      ...(inGroup?[{label:'Détacher du groupe',k:'⌥ glisser',run:()=>detachPiece(pid)}]:[]),
+      {label:'Relier à une autre carte',k:'L',run:()=>startLinkFrom(pid)},'-',
+      {label:'Supprimer',k:'⌫',danger:1,run:()=>deletePiece(pid)}]);
+    return;
+  }
+  ctxPlace=wpos;
+  openCtx(e.clientX,e.clientY,[
+    {label:'Nouvelle pièce ici',k:'N',run:()=>openEditor(null)},
+    {label:tool==='link'?'Revenir à Déplacer':'Outil Relier',k:tool==='link'?'V':'L',run:()=>setTool(tool==='link'?'move':'link')},'-',
+    {label:'Ajuster la vue',k:'0',run:fitView},
+    {label:'Zoomer',k:MOD+'+',run:()=>{userView=true;zoomAt(e.clientX,e.clientY,1.25);}},
+    {label:'Dézoomer',k:MOD+'−',run:()=>{userView=true;zoomAt(e.clientX,e.clientY,.8);}},'-',
+    {label:'Annuler',k:MOD+'Z',run:undo},
+    {label:'Vérifier ma carte',run:doVerify},
+    {label:'Mélanger les pièces',run:doShuffle},
+    {label:'Voir la solution',run:doSolution}]);
+});
+window.addEventListener('pointerdown',e=>{if(!$('ctx').hidden&&!e.target.closest('#ctx'))closeCtx();},true);
+window.addEventListener('blur',closeCtx);
+
 /* ---------- Clavier ---------- */
 const typing=e=>/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)||e.target.isContentEditable;
 window.addEventListener('keydown',e=>{
+  if(!$('ctx').hidden){
+    if(e.key==='Escape'){closeCtx();return;}
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const its=[...$('ctx').querySelectorAll('.it')],i=its.indexOf(document.activeElement);(its[(i+(e.key==='ArrowDown'?1:-1)+its.length)%its.length]||its[0]).focus();return;}
+  }
   if(e.key==='Escape'){closePop();if(!$('modal').hidden){closeModal();return;}if(drag&&drag.kind==='link'){drag=null;renderOverlay();}setTool('move');if(sel)select(null);return;}
   if(!$('modal').hidden||typing(e)) return;
   const mod=e.metaKey||e.ctrlKey, k=e.key.toLowerCase();
@@ -1104,7 +1219,7 @@ function saveEditor(){
     if(!same){p.h=d.h0;p.w=d.w0;}
     sel={type:'piece',id:p.id};
   }else{
-    const c=toWorld(innerWidth/2,innerHeight/2);
+    const c=ctxPlace||toWorld(innerWidth/2,innerHeight/2); ctxPlace=null;
     const p={id:uid('u'),num:d.num,title:d.title,desc:d.desc,src:d.src,color:d.color,w:d.w0,w0:d.w0,h:d.h0,h0:d.h0,x:Math.round(c.x-d.w/2),y:Math.round(c.y-d.h0/2)};
     nudgeFree(p); S.pieces.push(p); sel={type:'piece',id:p.id};
   }
