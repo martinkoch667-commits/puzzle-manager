@@ -5,7 +5,7 @@
 :root{
   --paper:#FFFFFF; --ink:#111111; --wine:#9F0049; --orange:#FC5912; --sky:#C5ECFF; --violet:#8E8EF7;
   --mist:#F3F3F0; --shade:rgba(17,17,17,.14);
-  --j-permet:#6E6915; --j-exige:#9F0049; --permet:#EE7AE8; --exige:#C5FAEA; --oppose:#F08F36;
+  --j-permet:#6E6915; --j-exige:#9F0049; --j-oppose:#81CFF4; --permet:#EE7AE8; --exige:#C5FAEA; --oppose:#F08F36;
   --f:"Helvetica Neue",Helvetica,Arial,sans-serif;
   color-scheme:light;
 }
@@ -45,6 +45,7 @@ button{font:inherit;color:inherit}
 .badge.exige,.badge.permet{background:#fff;font-size:34px;letter-spacing:-.005em}
 .badge.exige{color:var(--j-exige)}
 .badge.permet{color:var(--j-permet)}
+.badge.oppose{background:#fff;color:var(--j-oppose);font-size:28px;letter-spacing:-.01em}
 .badge.vide{width:124px;height:124px;margin:-62px 0 0 -62px;background:#fff;font-size:0;box-shadow:0 10px 26px rgba(17,17,17,.2);transition:scale .15s ease,box-shadow .15s ease;animation:vide-in .22s cubic-bezier(.2,.9,.3,1.3)}
 .badge.vide::before,.badge.vide::after{content:"";position:absolute;left:50%;top:50%;width:44px;height:5px;margin:-2.5px 0 0 -22px;background:var(--ink);border-radius:3px}
 .badge.vide::after{rotate:90deg}
@@ -94,6 +95,7 @@ button{font:inherit;color:inherit}
 #pop .pb.exige,#pop .pb.permet{background:#fff;font-size:15px;box-shadow:0 3px 12px rgba(17,17,17,.18)}
 #pop .pb.exige{color:var(--j-exige)}
 #pop .pb.permet{color:var(--j-permet)}
+#pop .pb.oppose{background:#fff;color:var(--j-oppose);font-size:13px;box-shadow:0 3px 12px rgba(17,17,17,.18)}
 #pop .pb.on{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ink)!important}
 #pop .lbl{font-size:12px;opacity:.6;max-width:90px;line-height:1.25;padding:0 4px}
 
@@ -291,6 +293,7 @@ button{font:inherit;color:inherit}
   <div class="lt" style="margin-top:6px">Jonctions entre pièces</div>
   <div class="lg"><span class="mini" style="color:var(--j-exige)">EXIGE</span>exige</div>
   <div class="lg"><span class="mini" style="color:var(--j-permet)">PERMET</span>permet</div>
+  <div class="lg"><span class="mini" style="color:var(--j-oppose);font-size:7px">S’OPPOSE</span>s’oppose à</div>
 </aside>
 
 <nav class="panel" id="bar">
@@ -325,6 +328,7 @@ button{font:inherit;color:inherit}
 
 <script>
 (()=>{
+const JTYPES=new Set(['EXIGE','PERMET','OPPOSE']), JWORD={EXIGE:'EXIGE',PERMET:'PERMET',OPPOSE:'S’OPPOSE'};
 const R=80.5;          // rayon d'une encoche, celui du design
 const SNAP=170;        // distance (unités du design) à laquelle deux cartes se « sentent »
 const EPS=1.5, MINOV=2*R+30, GAP=40;
@@ -474,7 +478,7 @@ function featuresMap(contacts,hv){
     const m=S.meta[c.key]; if(!m||!byId(c.a)||!byId(c.b)) continue;
     if(m.joint) add(c,jointU(c,m),m.joint,R);
     /* une pastille sur la jointure : le texte des deux cartes s'en écarte */
-    if(m.type==='EXIGE'||m.type==='PERMET'){get(c.a).badge.add(c.sa);get(c.b).badge.add(c.sb);}
+    if(JTYPES.has(m.type)){get(c.a).badge.add(c.sa);get(c.b).badge.add(c.sb);}
   }
   if(hv&&hv.r>0.5){
     const A=byId(hv.a),B=byId(hv.b);
@@ -756,11 +760,10 @@ function renderOverlay(contacts=computeContacts(S.pieces)){
   const selId=sel&&sel.type==='piece'&&!drag?sel.id:null;
   for(const c of contacts){
     const m=S.meta[c.key], pos=badgePos(c);
-    if(m&&(m.type==='EXIGE'||m.type==='PERMET')){
-      const cls=m.type==='EXIGE'?'exige':'permet';
-      html+=`<div class="badge ${cls}" data-k="${c.key}" style="left:${pos.x}px;top:${pos.y}px">${m.type}</div>`;
+    if(m&&JTYPES.has(m.type)){
+      html+=`<div class="badge ${m.type.toLowerCase()}" data-k="${c.key}" style="left:${pos.x}px;top:${pos.y}px">${JWORD[m.type]}</div>`;
     }else if(selId&&(c.a===selId||c.b===selId)){
-      html+=`<div class="badge vide" data-k="${c.key}" title="Choisir EXIGE ou PERMET" aria-label="Choisir EXIGE ou PERMET" style="left:${pos.x}px;top:${pos.y}px"></div>`;
+      html+=`<div class="badge vide" data-k="${c.key}" title="Choisir EXIGE, PERMET ou S’OPPOSE" aria-label="Choisir EXIGE, PERMET ou S’OPPOSE" style="left:${pos.x}px;top:${pos.y}px"></div>`;
     }
   }
   setHTML('Lbadges',html);
@@ -1033,6 +1036,7 @@ function openJunctionPop(k){
   pop.innerHTML=`<span class="lbl">Cette pièce…</span>
     <button class="pb exige${cur==='EXIGE'?' on':''}" data-t="EXIGE">EXIGE</button>
     <button class="pb permet${cur==='PERMET'?' on':''}" data-t="PERMET">PERMET</button>
+    <button class="pb oppose${cur==='OPPOSE'?' on':''}" data-t="OPPOSE">S’OPPOSE</button>
     <button class="btn" data-t="">Aucune</button>`;
   pop.dataset.k=k; pop.dataset.mode='junction'; pop.hidden=false; $('selbar').hidden=true;
   const r=pop.getBoundingClientRect();
@@ -1355,7 +1359,7 @@ vp.addEventListener('contextmenu',e=>{
   if(bk){
     const k=bk.dataset.k, cur=S.meta[k]&&S.meta[k].type;
     const setT=v=>()=>{pushHistory();S.meta[k]=S.meta[k]||{};if(v)S.meta[k].type=v;else delete S.meta[k].type;commit();};
-    openCtx(e.clientX,e.clientY,[{hd:'Cette pièce…'},{label:'EXIGE sa voisine',dot:1,on:cur==='EXIGE',run:setT('EXIGE')},{label:'PERMET sa voisine',dot:1,on:cur==='PERMET',run:setT('PERMET')},{label:'Aucune relation',on:!cur,run:setT('')}]);
+    openCtx(e.clientX,e.clientY,[{hd:'Cette pièce…'},{label:'EXIGE sa voisine',dot:1,on:cur==='EXIGE',run:setT('EXIGE')},{label:'PERMET sa voisine',dot:1,on:cur==='PERMET',run:setT('PERMET')},{label:'S’OPPOSE à sa voisine',dot:1,on:cur==='OPPOSE',run:setT('OPPOSE')},{label:'Aucune relation',on:!cur,run:setT('')}]);
     return;
   }
   if(aidEl){
@@ -1611,7 +1615,7 @@ function openIntro(){
       <li>Approchez une carte d’une autre : leurs bords se changent en encoches. Lâchez, elles s’emboîtent. Côte à côte, elles prennent la même hauteur.</li>
       <li>Option (Alt) + glisser, ou appui long puis glisser au doigt : la carte sort seule de son groupe.</li>
       <li>Au téléphone : deux doigts pour zoomer et se déplacer, double tap sur une carte pour la modifier, appui long pour son menu.</li>
-      <li>À chaque emboîtement, dites si la carte EXIGE ou PERMET sa voisine.</li>
+      <li>À chaque emboîtement, dites si la carte EXIGE sa voisine, la PERMET ou S’OPPOSE à elle.</li>
       <li>Pour relier deux groupes : attrape un des petits points au bord d’une carte et tire jusqu’à l’autre, ou prends la Plume et trace ton trait à main levée. Choisis ensuite permet, exige ou s’oppose à.</li>
     </ol>
     <div class="rule"></div>
@@ -1949,7 +1953,7 @@ function cleanLinks(v){
   const meta={}, idOk=x=>typeof x==='string'&&/^[A-Za-z0-9_.~:@+-]{1,80}$/.test(x);
   if(v&&v.meta&&typeof v.meta==='object') for(const [k,m] of Object.entries(v.meta)){
     const [a,b]=k.split('|'); if(!idOk(a)||!idOk(b)||!m||typeof m!=='object') continue;
-    const o={}; if(m.type==='EXIGE'||m.type==='PERMET') o.type=m.type;
+    const o={}; if(JTYPES.has(m.type)) o.type=m.type;
     if(idOk(m.joint)&&(m.joint===a||m.joint===b)){o.joint=m.joint;if(isFinite(m.ju))o.ju=+m.ju;}
     if(isFinite(m.t)) o.t=clamp(+m.t,0,1);
     meta[k]=o;
