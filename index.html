@@ -308,6 +308,20 @@ button{font:inherit;color:inherit}
   #selbar,#bar{box-sizing:border-box}
   #selbar .btn{padding:10px 11px}
 }
+/* Interface arrondie comme le bouton du logo : toutes les barres, menus et fenêtres ; les cartes du jeu gardent leurs angles droits */
+.panel,#bar,#topr,#selbar,#pop,#legend,#menuPanel{border-radius:18px}
+#head{border-radius:0}
+.btn,.mp-it,.mit,.chip{border-radius:12px}
+#bar .btn,#topr .btn,#selbar .btn,#pop .btn,#selbar .chip,#pop .chip{border-radius:12px}
+.ctx{border-radius:16px}.ctx .it{border-radius:10px}
+#toast{border-radius:16px}
+.sheet{border-radius:24px}
+.msheet{border-radius:24px 24px 0 0}
+.ic-wrap .icard.long,.ic-wrap .icard{border-radius:0}
+.fmt{border-radius:12px}
+.data textarea,.join input,.sheet input[type=text],.sheet input:not([type]){border-radius:12px}
+#legend .lg i{border-radius:5px}
+.ic-close{border-radius:50%}
 @media (prefers-reduced-motion:reduce){.piece.snapping{transition:none}.hd{animation:none;transition:none}.badge.vide{animation:none;transition:none}}
 </style>
 
