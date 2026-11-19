@@ -54,9 +54,53 @@ button{font:inherit;color:inherit}
 
 /* Interface */
 .panel{position:fixed;background:#fff;box-shadow:0 10px 34px var(--shade);z-index:20}
-#head{top:calc(16px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));padding:14px 18px;display:flex;flex-direction:column;gap:4px;max-width:calc(100% - 32px)}
-#head h1{margin:0;font-size:20px;font-weight:500;letter-spacing:.02em;text-transform:uppercase}
-#head .sub{font-size:13px;opacity:.65}
+/* En haut à gauche : le logo, qui ouvre le menu (infos, manifeste, métaphore, sources) */
+#head{top:calc(16px + env(safe-area-inset-top,0px));left:max(16px,env(safe-area-inset-left,0px));padding:0;background:transparent;box-shadow:none;max-width:calc(100% - 32px)}
+#bMenu{display:flex;align-items:center;gap:10px;border:0;padding:7px 14px 7px 7px;background:#fff;box-shadow:0 10px 34px var(--shade);cursor:pointer;border-radius:18px}
+#bMenu .katr{width:46px;height:46px;display:block;flex:none}
+#bMenu .bg{width:22px;height:16px;position:relative;flex:none}
+#bMenu .bg i{position:absolute;left:0;right:0;height:2.5px;border-radius:2px;background:var(--ink);transition:transform .2s ease,opacity .2s ease,top .2s ease}
+#bMenu .bg i:nth-child(1){top:0}#bMenu .bg i:nth-child(2){top:6.75px}#bMenu .bg i:nth-child(3){top:13.5px}
+#bMenu[aria-expanded="true"] .bg i:nth-child(1){top:6.75px;transform:rotate(45deg)}
+#bMenu[aria-expanded="true"] .bg i:nth-child(2){opacity:0}
+#bMenu[aria-expanded="true"] .bg i:nth-child(3){top:6.75px;transform:rotate(-45deg)}
+#bMenu:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+#menuPanel{position:absolute;left:0;top:calc(100% + 10px);width:340px;max-width:calc(100vw - 32px);background:#fff;box-shadow:0 18px 50px rgba(17,17,17,.22);padding:18px 10px 10px;box-sizing:border-box;animation:mp-in .18s cubic-bezier(.2,.9,.3,1);transform-origin:0 0}
+@keyframes mp-in{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.mp-head{padding:0 10px 14px;display:flex;flex-direction:column;gap:4px}
+#head h1{margin:0;font-size:18px;font-weight:500;letter-spacing:.02em;text-transform:uppercase}
+#head .sub{font-size:13px;opacity:.65;line-height:1.35}
+.mp-sp{height:1px;background:var(--ink);opacity:.1;margin:0 10px 6px}
+.mp-it{display:flex;align-items:center;gap:14px;width:100%;border:0;background:transparent;padding:10px;text-align:left;cursor:pointer;font:inherit;color:var(--ink)}
+.mp-it:hover,.mp-it:focus-visible,.mp-it.on{background:var(--mist);outline:none}
+.mp-it .dot{width:52px;height:52px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-size:7.5px;font-weight:500;letter-spacing:0;text-transform:uppercase}
+.mp-it .tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mp-it b{font-weight:700;font-size:15px}
+.mp-it small{font-size:12.5px;opacity:.62;line-height:1.3}
+.mp-it .ar{margin-left:auto;opacity:.35;flex:none}
+
+/* Les cartes du menu, à l'identique du livrable */
+.icard{position:relative;background:var(--bg);color:var(--ink);box-sizing:border-box;width:100%;padding:72px 46px 34px;font-family:var(--f)}
+.badge2{position:absolute;z-index:2;left:50%;top:0;width:104px;height:104px;margin:0 0 0 -52px;border-radius:50%;background:var(--badge);color:#fff;display:grid;place-items:center;font-size:12.5px;font-weight:500;letter-spacing:.01em;text-transform:uppercase}
+.icard h2{margin:0 0 18px;font-size:32px;font-weight:700;line-height:1.1;letter-spacing:-.005em}
+.icard .st{margin:0 0 20px;font-size:19px;font-weight:400;line-height:1.28;text-transform:uppercase}
+.icard p{margin:0 0 14px;font-size:15px;line-height:1.42}
+.icard b{font-weight:700}
+.icard .ft{border-top:1px solid rgba(17,17,17,.4);margin-top:22px;padding-top:9px;font-size:11.5px;opacity:.62}
+.icard h3{margin:18px 0 4px;font-size:19px;font-weight:700}
+.icard ul{margin:0;padding-left:20px;font-size:13.5px;line-height:1.42}
+.icard li{padding-left:2px}
+.icard li::marker{font-size:.8em}
+
+.ic-wrap{position:relative;width:min(620px,calc(100vw - 32px));max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);display:flex;flex-direction:column;padding-top:52px;box-sizing:border-box}
+.ic-wrap.long{width:min(760px,calc(100vw - 32px))}
+.ic-wrap .icard{min-height:0;overflow:auto;overscroll-behavior:contain;box-shadow:0 30px 80px rgba(17,17,17,.3)}
+.ic-close{position:absolute;right:0;top:4px;border:0;background:#fff;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:22px;line-height:1;display:grid;place-items:center;box-shadow:0 6px 18px rgba(17,17,17,.2)}
+#peek{position:fixed;z-index:19;width:430px;pointer-events:none;padding-top:52px;animation:mp-in .16s ease}
+#peek .icard{max-height:calc(100vh - 140px);overflow:hidden;box-shadow:0 24px 60px rgba(17,17,17,.25);-webkit-mask-image:linear-gradient(#000 calc(100% - 60px),transparent);mask-image:linear-gradient(#000 calc(100% - 60px),transparent)}
+#peek .icard.fits{-webkit-mask-image:none;mask-image:none}
+#peek .badge2{width:88px;height:88px;margin-left:-44px;top:8px;font-size:11px}
+#peek .icard h2{font-size:26px}#peek .icard .st{font-size:16px}#peek .icard p{font-size:13px}#peek .icard ul{font-size:12px}#peek .icard h3{font-size:16px}
 #prog{font-variant-numeric:tabular-nums;font-size:13px;font-weight:500;display:flex;gap:6px;align-items:center;margin-top:4px}
 #prog .dot{width:10px;height:10px;border-radius:50%;background:var(--wine)}
 #topr{top:calc(16px + env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;padding:6px;gap:2px}
@@ -222,12 +266,14 @@ button{font:inherit;color:inherit}
   .tl{display:none}.ic{display:inline}
   #topr .btn{padding:8px 10px}
   #topr{padding:4px}
-  #head{max-width:calc(100% - 42px - var(--toprw,170px));padding:9px 12px;gap:2px;box-sizing:border-box}
-  #head h1{font-size:11px;letter-spacing:.08em;opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #head .sub{display:none}
-  #prog{margin-top:0;font-size:13px;min-width:0}
-  #progTxt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-  #sync{display:none}
+  #bMenu{padding:5px 12px 5px 5px;gap:8px;border-radius:15px}
+  #bMenu .katr{width:40px;height:40px}
+  .icard{padding:66px 24px 26px}
+  .icard h2{font-size:26px}
+  .icard .st{font-size:16px}
+  .icard p{font-size:14.5px}
+  .icard ul{font-size:13px}
+  .ic-wrap .badge2{width:88px;height:88px;margin-left:-44px;top:8px;font-size:11px}
   #bar{gap:4px;padding:5px}
   #bar .btn{padding:11px 12px}
   #bar .btn svg{margin-right:0!important}
@@ -263,10 +309,17 @@ button{font:inherit;color:inherit}
 </div>
 
 <header class="panel" id="head">
-  <h1>Le puzzle du manager</h1>
-  <div class="sub">Reconstituez la carte : emboîtez, qualifiez, reliez.</div>
-  <div id="prog"><span class="dot"></span><span id="progTxt">0 / 15 assemblages</span></div>
-  <div id="sync" hidden><i></i><span id="syncTxt">Plateau partagé</span></div>
+  <button type="button" id="bMenu" aria-expanded="false" aria-controls="menuPanel" aria-label="Menu : le jeu, le manifeste, la métaphore, les sources"><svg class="katr" xmlns="http://www.w3.org/2000/svg" viewBox="152 88 1101 1154" aria-hidden="true"><rect x="152" y="88" width="1101" height="1154" rx="316" fill="#F3F2EE"/><g fill="#111"><path d="M428 294L535 299L527 406L600 294L717 302L605 459L700 622L592 642L520 543L516 647L420 651Z"/><path fill-rule="evenodd" d="M789 309L918 303L1010 617L894 631L879 579L826 579L815 631L697 620ZM853 427L871 508L836 508Z"/><path d="M414 704L668 703L666 802L597 804L578 1026L481 1031L481 810L411 813Z"/><path fill-rule="evenodd" d="M687 715C730 700 775 694 820 695C900 697 955 745 955 815C955 860 940 885 899 913L953 1014L848 1034L811 933L783 935L779 1033L680 1033ZM791 776L807 774C835 772 850 790 850 818C850 845 825 862 787 863Z"/><circle cx="1012" cy="988" r="49"/></g></svg><span class="bg" aria-hidden="true"><i></i><i></i><i></i></span></button>
+  <div id="menuPanel" hidden>
+    <div class="mp-head">
+      <h1>Le puzzle du manager</h1>
+      <div class="sub">Reconstituez la carte : emboîtez, qualifiez, reliez.</div>
+      <div id="prog"><span class="dot"></span><span id="progTxt">0 / 15 assemblages</span></div>
+      <div id="sync" hidden><i></i><span id="syncTxt">Plateau partagé</span></div>
+    </div>
+    <div class="mp-sp"></div>
+    <div id="mpItems"></div>
+  </div>
 </header>
 
 <div class="cursors" id="cursors"></div>
@@ -1462,6 +1515,86 @@ $('bSave').onclick=openSaves;
 $('bLib').onclick=openLibrary;
 $('bSettings').onclick=openSettings;
 $('bMore').onclick=openMenu;
+/* ---------- Menu du logo : le jeu, le manifeste, la métaphore, les sources ---------- */
+const INFO={
+  manifeste:{badge:'Manifeste',dot:'#FF8801',bg:'#C5ECFF',item:'Le manifeste',sub:'Notre vision du management',
+    html:`<h2>Notre vision du management</h2><div class="st">Construire ensemble les fondations d’un management efficace</div>
+      <p>Nous croyons que le management se <b>construit collectivement</b>, <b>pièce par pièce</b>. Chaque idée, chaque compétence et chaque personne a sa place. Notre outil encourage l’<b>échange</b>, l’<b>écoute</b> et la <b>participation</b> de tous. Car c’est en assemblant nos connaissances et nos points de vue que nous construisons ensemble un management plus humain, <b>collaboratif</b> et <b>efficace</b>.</p>
+      <div class="ft">Le manifeste</div>`},
+  metaphore:{badge:'Métaphore',dot:'#9E960A',bg:'#FFD9C9',item:'La métaphore',sub:'Le management, pièces par pièces',
+    html:`<h2>Le management,<br>pièces par pièces</h2><div class="st">Chaque notion est indispensable au bon fonctionnement d’une organisation.</div>
+      <p>Nous avons choisi le <b>puzzle</b> pour représenter le <b>management</b> car celui-ci repose sur plusieurs éléments qui doivent fonctionner ensemble. Chaque pièce représente une notion comme la communication, les méthodes (RACI, SMART, SWOT, DISC), l’organisation d’une équipe ou encore le leadership.</p>
+      <p>Comme dans un puzzle, <b>chaque élément a son importance</b> et c’est en les reliant les uns aux autres que l’on obtient un <b>ensemble cohérent</b>.</p>
+      <p>Cela montre que pour bien manager, il faut savoir associer toutes ces notions afin de faire avancer une équipe vers un <b>objectif commun</b>.</p>
+      <div class="ft">La métaphore</div>`},
+  sources:{badge:'Ours',dot:'#81CFF4',bg:'#FEFAB0',item:'Les sources',sub:'Bien s’organiser, c’est déjà bien manager',long:1,
+    html:`<h2>Les sources du puzzle</h2><div class="st">Bien s’organiser,<br>c’est déjà bien manager.</div>
+      <h3>Sources jour 1</h3><ul>
+      <li>Fayol, H. (1916). <i>Administration industrielle et générale.</i></li>
+      <li>Goleman, D. (2000). Leadership That Gets Results. <i>Harvard Business Review</i>, mars-avril 2000.</li>
+      <li>Marston, W. M. (1928). <i>Emotions of Normal People.</i></li>
+      <li>Pittenger, D. J. (2005). Cautionary comments regarding the Myers-Briggs Type Indicator. <i>Consulting Psychology Journal</i>, 57(3), 210-221.</li>
+      <li>Code du travail, art. L1132-1, L1221-6, L1221-8 et L5212-2 (Légifrance).</li>
+      <li>Agefiph (2023). Cahier n° 5 : « Aménagement raisonnable ».</li>
+      <li>France Compétences. Fiche RNCP 38942, « Directeur artistique », bloc 3, compétence C3.1.</li>
+      <li>La Fresque du Climat (atelier créé par Cédric Ringenbach en 2015), fresqueduclimat.org.</li>
+      <li>Vidéos : La Brève du Manager (2023) ; La Fresque du Climat (2021) ; Agefiph (2019).</li>
+      <li>Mini-test DISC gratuit : fasterclass.fr (non validé scientifiquement à ma connaissance).</li></ul>
+      <h3>Sources jour 2</h3><ul>
+      <li>Doran, G. T. (1981). There’s a S.M.A.R.T. way to write management’s goals and objectives. <i>Management Review</i>, 70(11), 35-36.</li>
+      <li>Goleman, D. (2000). Leadership That Gets Results. <i>Harvard Business Review</i>, mars-avril 2000.</li>
+      <li>Hersey, P. &amp; Blanchard, K. H. (1969). Life cycle theory of leadership. <i>Training and Development Journal.</i></li>
+      <li>Bower, S. A. &amp; Bower, G. H. (1976). Asserting Yourself: A Practical Guide for Positive Change.</li>
+      <li>Renninger, L. (2020). The secret to giving great feedback. TED, série The Way We Work.</li>
+      <li>France Compétences. Fiche RNCP 38942, bloc 3, compétence C3.3.</li>
+      <li>Vidéos : Parlons Projet by BGDP (2021) ; TED (2020).</li>
+      <li>SWOT, matrice d’Eisenhower, RACI : outils d’usage courant, sans auteur unique établi.</li></ul>
+      <h3>Sources du jour 3</h3><ul>
+      <li>Edmondson, A. (1999). <i>Psychological safety and learning behavior in work teams.</i> Administrative Science Quarterly, 44(2).</li>
+      <li>Rozovsky, J. (2015). <i>The five keys to a successful Google team.</i> re:Work, 17 novembre 2015.</li>
+      <li>Diehl, M. &amp; Stroebe, W. (1987). <i>Productivity loss in brainstorming groups.</i> Journal of Personality and Social Psychology, 53(3), 497-509.</li>
+      <li>Mullen, B., Johnson, C. &amp; Salas, E. (1991). <i>Productivity loss in brainstorming groups: a meta-analytic integration.</i></li>
+      <li>Rohrbach, B. <i>Méthode 6-3-5</i>, revue Absatzwirtschaft, fin des années 1960.</li>
+      <li>IDEO U. (2025). <i>7 Rules for the Perfect Brainstorming Session.</i></li>
+      <li>de Bono, E. (1985). <i>Six Thinking Hats.</i></li>
+      <li>Lecerf-Thomas, B. (2009). <i>Neurosciences et management : le pouvoir de changer.</i> Eyrolles.</li>
+      <li>Jehn, K. A. (1995). Administrative Science Quarterly, 40(2).</li>
+      <li>De Dreu, C. &amp; Weingart, L. (2003). Journal of Applied Psychology, 88(4), 741-749.</li>
+      <li>De Wit, F., Greer, L. &amp; Jehn, K. (2012). Journal of Applied Psychology, 97(2), 360-390.</li>
+      <li>Rosenberg, M. B. (1999). <i>Nonviolent Communication.</i> En français : <i>Les mots sont des fenêtres</i>, La Découverte.</li>
+      <li>Fisher, R. &amp; Ury, W. (1981). <i>Getting to Yes.</i></li>
+      <li>Quote Investigator (2 mars 2017), sur la citation prêtée à Einstein.</li></ul>
+      <div class="ft">Les sources</div>`}
+};
+const infoWrap=(k,extra='',attrs='')=>{const I=INFO[k];return `<div class="ic-wrap${I.long?' long':''}"${attrs}><span class="badge2" style="background:${I.dot}">${esc(I.badge)}</span><article class="icard${I.long?' long':''}" style="--bg:${I.bg}">${I.html}</article>${extra}</div>`;};
+$('mpItems').innerHTML=Object.entries(INFO).map(([k,I])=>`<button type="button" class="mp-it" data-info="${k}"><span class="dot" style="background:${I.dot}">${esc(I.badge)}</span><span class="tx"><b>${esc(I.item)}</b><small>${esc(I.sub)}</small></span><svg class="ar" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`).join('')
+  +`<div class="mp-sp" style="margin-top:6px"></div><button type="button" class="mp-it" data-info="regles"><span class="dot" style="background:var(--wine);font-size:20px;font-weight:700">?</span><span class="tx"><b>Règles du jeu</b><small>Emboîter, qualifier, relier</small></span></button>`;
+function setMenu(open){
+  $('menuPanel').hidden=!open; $('bMenu').setAttribute('aria-expanded',open?'true':'false');
+  if(!open) hidePeek(); else{closeCtx();closePop();}
+}
+$('bMenu').onclick=e=>{e.stopPropagation();setMenu($('menuPanel').hidden);};
+window.addEventListener('pointerdown',e=>{if(!$('menuPanel').hidden&&!e.target.closest('#head'))setMenu(false);},true);
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('menuPanel').hidden&&$('modal').hidden)setMenu(false);});
+/* au survol, la carte apparaît à côté du menu ; au clic, elle s'ouvre en grand */
+const canPeek=()=>matchMedia('(hover:hover) and (pointer:fine)').matches&&innerWidth>820;
+let peekKey=null;
+function showPeek(k){
+  if(!canPeek()||!INFO[k]||peekKey===k) return;
+  hidePeek(); peekKey=k;
+  const d=document.createElement('div'); d.id='peek'; d.innerHTML=infoWrap(k); document.body.appendChild(d);
+  const mp=$('menuPanel').getBoundingClientRect(); d.style.left=(mp.right+16)+'px'; d.style.top=Math.max(8,mp.top-52)+'px';
+  const c=d.querySelector('.icard'); if(c.scrollHeight<=c.clientHeight+1) c.classList.add('fits');
+  $('mpItems').querySelectorAll('.mp-it').forEach(b=>b.classList.toggle('on',b.dataset.info===k));
+}
+function hidePeek(){peekKey=null;const d=$('peek');d&&d.remove();$('mpItems').querySelectorAll('.mp-it.on').forEach(b=>b.classList.remove('on'));}
+$('mpItems').addEventListener('pointerover',e=>{const b=e.target.closest('[data-info]');if(b&&e.pointerType==='mouse')showPeek(b.dataset.info);});
+$('mpItems').addEventListener('pointerleave',hidePeek);
+$('mpItems').addEventListener('click',e=>{const b=e.target.closest('[data-info]');if(!b)return;const k=b.dataset.info;setMenu(false);if(k==='regles')openIntro();else openInfo(k);});
+function openInfo(k){
+  openModal(infoWrap(k,'<button type="button" class="ic-close" aria-label="Fermer">×</button>',` role="dialog" aria-modal="true" aria-label="${esc(INFO[k].item)}"`));
+  $('modal').querySelector('.ic-close').onclick=closeModal;
+}
 /* le titre prend la place que laissent les boutons de droite */
 try{new ResizeObserver(()=>document.documentElement.style.setProperty('--toprw',$('topr').offsetWidth+'px')).observe($('topr'));}catch(_){}
 /* Sur téléphone, ce qui ne tient pas dans les barres passe dans ce menu */
