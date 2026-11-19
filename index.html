@@ -597,9 +597,9 @@ function renderOverlay(contacts=computeContacts(S.pieces)){
     const m=S.meta[c.key], pos=badgePos(c);
     if(m&&(m.type==='EXIGE'||m.type==='PERMET')){
       const cls=m.type==='EXIGE'?'exige':'permet';
-      html+=`<div class="badge ${cls}" data-k="${c.key}" style="transform:translate(${pos.x}px,${pos.y}px)">${m.type}</div>`;
+      html+=`<div class="badge ${cls}" data-k="${c.key}" style="left:${pos.x}px;top:${pos.y}px">${m.type}</div>`;
     }else if(selId&&(c.a===selId||c.b===selId)){
-      html+=`<div class="badge vide" data-k="${c.key}" title="Choisir EXIGE ou PERMET" aria-label="Choisir EXIGE ou PERMET" style="transform:translate(${pos.x}px,${pos.y}px)"></div>`;
+      html+=`<div class="badge vide" data-k="${c.key}" title="Choisir EXIGE ou PERMET" aria-label="Choisir EXIGE ou PERMET" style="left:${pos.x}px;top:${pos.y}px"></div>`;
     }
   }
   setHTML('Lbadges',html);
