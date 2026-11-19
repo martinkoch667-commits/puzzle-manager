@@ -16,6 +16,7 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f);over
 button{font:inherit;color:inherit}
 #vp{position:fixed;inset:0;overflow:hidden;touch-action:none;background:var(--paper)}
 #vp.panning{cursor:grabbing}
+#vp.space,#vp.space .piece .sh path{cursor:grab}
 .world{position:absolute;left:0;top:0;transform-origin:0 0}
 .layer{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
 
@@ -24,6 +25,7 @@ button{font:inherit;color:inherit}
 .piece .sh{position:absolute;overflow:visible;pointer-events:none}
 .piece .sh path{pointer-events:visiblePainted;cursor:grab}
 .tool-link .piece .sh path{cursor:crosshair}
+.tool-link #vp,.tool-link{cursor:crosshair}
 .tool-link #Larrows *{pointer-events:none!important}
 .piece.lift{filter:drop-shadow(0 30px 34px rgba(17,17,17,.24))}
 .piece.lift .sh path{cursor:grabbing}
@@ -241,8 +243,8 @@ button{font:inherit;color:inherit}
 
 <nav class="panel" id="bar">
   <div class="grp">
-    <button class="btn on" id="tMove" title="Déplacer (V)">Déplacer</button>
-    <button class="btn" id="tLink" title="Relier deux groupes (L)">Relier</button>
+    <button class="btn on" id="tMove" title="Déplacer (V)"><svg width="14" height="15" viewBox="0 0 22 22" style="vertical-align:-2px;margin-right:6px" aria-hidden="true"><path d="M4.2 3.1 L19.4 9.4 L12.3 11.9 L9.6 18.9 Z" fill="currentColor" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>Déplacer</button>
+    <button class="btn" id="tLink" title="Plume : trace une flèche d’une carte à l’autre (P)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px" aria-hidden="true"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>Plume</button>
   </div>
   <span class="sep"></span>
   <button class="btn wine" id="bAdd">+ Pièce</button>
@@ -575,10 +577,14 @@ function exitUnion(rects,c,t){
 }
 /* Une flèche relie deux groupes : elle sort du bord du groupe qui fait face à l'autre et arrive de face, en courbe douce */
 function bboxOf(ids,g){let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;ids.forEach(id=>{const p=byId(id);if(!p)return;x1=Math.min(x1,p.x);y1=Math.min(y1,p.y);x2=Math.max(x2,p.x+p.w);y2=Math.max(y2,p.y+p.h);});return {x1:x1-g,y1:y1-g,x2:x2+g,y2:y2+g};}
+const anchorOf=(r,p)=>{const d=[Math.abs(p.y-r.y1),Math.abs(p.x-r.x2),Math.abs(p.y-r.y2),Math.abs(p.x-r.x1)],sd=d.indexOf(Math.min(...d));
+  const t=sd%2===0?(p.x-r.x1)/((r.x2-r.x1)||1):(p.y-r.y1)/((r.y2-r.y1)||1);return [sd,+clamp(t,0,1).toFixed(3)];};
+const anchorPt=(r,[sd,t])=>sd===0?{x:r.x1+t*(r.x2-r.x1),y:r.y1}:sd===1?{x:r.x2,y:r.y1+t*(r.y2-r.y1)}:sd===2?{x:r.x1+t*(r.x2-r.x1),y:r.y2}:{x:r.x1,y:r.y1+t*(r.y2-r.y1)};
 function arrowGeom(a,G){
   const A=byId(a.from),B=byId(a.to); if(!A||!B) return null;
   const same=G.get(A.id)===G.get(B.id);
   const RA=bboxOf(same?[A.id]:G.get(A.id),GAP), RB=bboxOf(same?[B.id]:G.get(B.id),GAP);
+  if(a.route&&a.as&&a.ae) return {s:anchorPt(RA,a.as),e:anchorPt(RB,a.ae),RA,RB};
   const ca={x:A.x+A.w/2,y:A.y+A.h/2}, cb={x:B.x+B.w/2,y:B.y+B.h/2};
   const gapX=Math.max(RB.x1-RA.x2,RA.x1-RB.x2), gapY=Math.max(RB.y1-RA.y2,RA.y1-RB.y2);
   let vertical=gapY>=gapX; if(a.flip) vertical=!vertical;
@@ -606,8 +612,20 @@ function cubicLen(s,c1,c2,e){
   for(let i=1;i<=40;i++){const t=i/40,u=1-t,x=u*u*u*s.x+3*u*u*t*c1.x+3*u*t*t*c2.x+t*t*t*e.x,y=u*u*u*s.y+3*u*u*t*c1.y+3*u*t*t*c2.y+t*t*t*e.y;L+=Math.hypot(x-px,y-py);px=x;py=y;}
   return L;
 }
+function splineD(P){
+  let d=`M${P[0].x.toFixed(1)} ${P[0].y.toFixed(1)}`;
+  for(let i=0;i<P.length-1;i++){const p0=P[i-1]||P[i],p1=P[i],p2=P[i+1],p3=P[i+2]||P[i+1];
+    d+=` C${(p1.x+(p2.x-p0.x)/6).toFixed(1)} ${(p1.y+(p2.y-p0.y)/6).toFixed(1)} ${(p2.x-(p3.x-p1.x)/6).toFixed(1)} ${(p2.y-(p3.y-p1.y)/6).toFixed(1)} ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;}
+  return d;
+}
+function polyLen(P){let L=0;for(let i=1;i<P.length;i++)L+=Math.hypot(P[i].x-P[i-1].x,P[i].y-P[i-1].y);return L*1.04;}
+function routedPoints(a,g){
+  const d={x:g.e.x-g.s.x,y:g.e.y-g.s.y};
+  return [g.s,...a.route.map(([u,v])=>({x:g.s.x+u*d.x-v*d.y,y:g.s.y+u*d.y+v*d.x})),g.e];
+}
 function arrowSVG(a,G){
   const g=arrowGeom(a,G); if(!g) return '';
+  if(a.route&&a.route.length) return routedSVG(a,g);
   const k=KW[a.kw]||KW.permet, {s,e,t1,t2}=g;
   const d=`M${s.x} ${s.y} C${t1.x} ${t1.y} ${t2.x} ${t2.y} ${e.x} ${e.y}`;
   /* le mot se lit toujours de gauche à droite (et de haut en bas sur une flèche verticale) */
@@ -615,6 +633,22 @@ function arrowSVG(a,G){
   const ld=rev?`M${e.x} ${e.y} C${t2.x} ${t2.y} ${t1.x} ${t1.y} ${s.x} ${s.y}`:d;
   /* Pointillé recalé sur la longueur : il part du premier point et finit pile sur le second */
   const L=cubicLen(s,t1,t2,e), n=Math.max(1,Math.round((L-8)/35)), unit=(L-8)/n;
+  const dash=`${(unit*.63).toFixed(2)} ${(unit*.37).toFixed(2)}`;
+  const on=sel&&sel.type==='arrow'&&sel.id===a.id;
+  return `<g>
+    ${on?`<path d="${d}" fill="none" stroke="#111" stroke-opacity=".12" stroke-width="34" stroke-linecap="round"/>`:''}
+    <path d="${d}" fill="none" stroke="${k.line}" stroke-width="8" stroke-dasharray="${dash}" stroke-dashoffset="-4"/>
+    <circle cx="${s.x}" cy="${s.y}" r="16" fill="${k.line}"/><circle cx="${e.x}" cy="${e.y}" r="16" fill="${k.line}"/>
+    <path id="lp-${a.id}" d="${ld}" fill="none"/>
+    <text font-size="36" fill="${k.text}" font-family="Helvetica Neue,Helvetica,Arial,sans-serif" dy="-20"><textPath href="#lp-${a.id}" xlink:href="#lp-${a.id}" startOffset="50%" text-anchor="middle">${k.label}</textPath></text>
+    <path d="${d}" fill="none" stroke="transparent" stroke-width="30" data-aid="${a.id}" style="pointer-events:stroke;cursor:pointer"/>
+  </g>`;
+}
+
+function routedSVG(a,g){
+  const k=KW[a.kw]||KW.permet, P=routedPoints(a,g), d=splineD(P), {s,e}=g;
+  const rev=Math.abs(e.x-s.x)>40?e.x<s.x:e.y<s.y, ld=rev?splineD([...P].reverse()):d;
+  const L=polyLen(P), n=Math.max(1,Math.round((L-8)/35)), unit=(L-8)/n;
   const dash=`${(unit*.63).toFixed(2)} ${(unit*.37).toFixed(2)}`;
   const on=sel&&sel.type==='arrow'&&sel.id===a.id;
   return `<g>
@@ -659,7 +693,11 @@ function renderOverlay(contacts=computeContacts(S.pieces)){
       gh+=`<path transform="translate(${q.x} ${q.y})" d="${shapePath(q,f)}" fill="${p.color}" fill-opacity=".3" stroke="#111" stroke-width="2" stroke-dasharray="7 5" vector-effect="non-scaling-stroke"/>`;
     }
   }
-  if(drag&&drag.kind==='link'&&drag.cur&&byId(drag.from)){
+  if(drag&&drag.kind==='link'&&drag.pen&&drag.pts&&drag.pts.length){
+    const T=drag.target&&byId(drag.target), pts=[...drag.pts,drag.cur];
+    if(T){const fT=featuresMap(contacts,null).get(T.id)||EMPTY;gh+=`<path transform="translate(${T.x} ${T.y})" d="${shapePath(T,fT)}" fill="${T.color}" fill-opacity=".18" stroke="#111" stroke-width="4" vector-effect="non-scaling-stroke"/>`;}
+    gh+=`<path d="M${pts.map(p=>p.x.toFixed(1)+' '+p.y.toFixed(1)).join(' L')}" fill="none" stroke="#111" stroke-opacity=".6" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="22 13"/><circle cx="${pts[0].x}" cy="${pts[0].y}" r="16" fill="#111" fill-opacity=".6"/>`;
+  }else if(drag&&drag.kind==='link'&&drag.cur&&byId(drag.from)){
     const A=byId(drag.from), T=drag.target&&byId(drag.target);
     if(T){
       const g=arrowGeom({from:A.id,to:T.id,flip:false},G);
@@ -838,7 +876,7 @@ function renderSelbar(){
   }else{
     const a=S.arrows.find(x=>x.id===sel.id); if(!a){bar.hidden=true;return;}
     bar.innerHTML=Object.entries(KW).map(([k,v])=>`<button class="chip${a.kw===k?' on':''}" data-kw="${k}"><i style="background:${v.line}"></i>${v.word}</button>`).join('')+
-      `<span class="sep"></span><button class="btn" data-act="flip">Courbe</button><button class="btn" data-act="swap">Sens</button><button class="btn" data-act="del">Supprimer</button>`;
+      `<span class="sep"></span>${a.route?'<button class="btn" data-act="straight">Redresser</button>':'<button class="btn" data-act="flip">Changer de côté</button>'}<button class="btn" data-act="swap">Inverser le sens</button><button class="btn" data-act="del">Supprimer</button>`;
   }
   bar.hidden=false;
 }
@@ -851,7 +889,7 @@ $('selbar').addEventListener('click',e=>{
   }else{
     const a=S.arrows.find(x=>x.id===sel.id); if(!a) return;
     if(act==='del'){deleteSel();return;}
-    pushHistory(); if(act==='flip') a.flip=!a.flip; if(act==='swap'){const t=a.from;a.from=a.to;a.to=t;} commit();
+    pushHistory(); if(act==='flip') a.flip=!a.flip; if(act==='swap') swapArrow(a); if(act==='straight'){delete a.route;delete a.as;delete a.ae;} commit();
   }
 });
 
@@ -877,7 +915,8 @@ $('pop').addEventListener('click',e=>{
     if(ab.dataset.aact==='del'){closePop();sel={type:'arrow',id:a.id};deleteSel();return;}
     pushHistory();
     if(ab.dataset.akw) a.kw=ab.dataset.akw;
-    if(ab.dataset.aact==='swap'){const f=a.from;a.from=a.to;a.to=f;}
+    if(ab.dataset.aact==='swap') swapArrow(a);
+    if(ab.dataset.aact==='straight'){delete a.route;delete a.as;delete a.ae;}
     closePop(); commit(); return;
   }
   const b=e.target.closest('[data-t]'); if(!b) return;
@@ -969,7 +1008,7 @@ vp.addEventListener('pointerdown',e=>{
   if(aidEl&&tool==='move'){select({type:'arrow',id:aidEl.dataset.aid});openArrowPop(aidEl.dataset.aid,e.clientX,e.clientY);return;}
   if(pidEl){
     const pid=pidEl.dataset.pid;
-    if(tool==='link'){drag={kind:'link',from:pid,cur:toWorld(e.clientX,e.clientY),target:null};sel=null;renderSelbar();}
+    if(tool==='link'){const w=toWorld(e.clientX,e.clientY);drag={kind:'link',from:pid,cur:w,target:null,pen:true,pts:[w]};sel=null;renderSelbar();}
     else startPieceDrag(e,pid);
     capture(e); return;
   }
@@ -993,6 +1032,7 @@ vp.addEventListener('pointermove',e=>{
   if(drag.kind==='pan'){userView=true;view.tx=drag.tx+e.clientX-drag.sx;view.ty=drag.ty+e.clientY-drag.sy;applyView();return;}
   if(drag.kind==='link'){
     drag.cur=toWorld(e.clientX,e.clientY);
+    if(drag.pen){const l=drag.pts[drag.pts.length-1];if(Math.hypot(drag.cur.x-l.x,drag.cur.y-l.y)>10/view.s&&drag.pts.length<600)drag.pts.push(drag.cur);}
     const T=pieceAt(drag.cur,drag.from); drag.target=T?T.id:null;
     if(!raf)raf=requestAnimationFrame(()=>{raf=0;renderOverlay();});return;
   }
@@ -1037,7 +1077,7 @@ function endPointer(e){
     if(fresh.length) setTimeout(()=>openJunctionPop(fresh[0].key),200);
   }else if(d.kind==='link'){
     const T=d.target?byId(d.target):pieceAt(toWorld(e.clientX,e.clientY),d.from);
-    finishLink(d.from,T&&T.id);
+    finishLink(d.from,T&&T.id,d.pen?[...d.pts,toWorld(e.clientX,e.clientY)]:null);
   }
 }
 vp.addEventListener('pointerup',endPointer);
@@ -1084,6 +1124,7 @@ function setHover(pid){
 }
 function arrowMid(a){
   const c=computeContacts(S.pieces), g=arrowGeom(a,groupsOf(c)); if(!g) return null;
+  if(a.route&&a.route.length){const P=routedPoints(a,g);return P[Math.floor(P.length/2)];}
   const t=.5,u=.5; return {x:u*u*u*g.s.x+3*u*u*t*g.t1.x+3*u*t*t*g.t2.x+t*t*t*g.e.x, y:u*u*u*g.s.y+3*u*u*t*g.t1.y+3*u*t*t*g.t2.y+t*t*t*g.e.y};
 }
 function openArrowPop(aid,sx,sy){
@@ -1092,16 +1133,45 @@ function openArrowPop(aid,sx,sy){
   const A=byId(a.from), pop=$('pop');
   pop.innerHTML=`<span class="lbl">${esc((A&&A.title)||'Cette carte')}…</span>`+
     Object.entries(KW).map(([k,v])=>`<button class="chip${a.kw===k?' on':''}" data-akw="${k}"><i style="background:${v.line}"></i>${v.word}</button>`).join('')+
+    (a.route?`<button class="btn" data-aact="straight" title="Redresser la flèche">Redresser</button>`:'')+
     `<button class="btn" data-aact="swap" title="Inverser le sens">⇄</button><button class="btn" data-aact="del" title="Supprimer la flèche">Supprimer</button>`;
   pop.dataset.mode='arrow'; pop.dataset.aid=aid; pop.hidden=false; $('selbar').hidden=true;
   const r=pop.getBoundingClientRect();
   pop.style.left=clamp(sx-r.width/2,12,innerWidth-r.width-12)+'px';
   pop.style.top=(sy+56+r.height<innerHeight-90?sy+56:clamp(sy-r.height-56,12,innerHeight-r.height-12))+'px';
 }
-function finishLink(from,to){
+/* le tracé est gardé relatif aux deux bouts : la flèche garde sa forme quand les cartes bougent */
+function simplify(pts,tol){
+  if(pts.length<3) return pts.slice();
+  const seg=(p,a,b)=>{const dx=b.x-a.x,dy=b.y-a.y,L=dx*dx+dy*dy||1;let t=((p.x-a.x)*dx+(p.y-a.y)*dy)/L;t=clamp(t,0,1);return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);};
+  let iMax=0,dMax=0;for(let i=1;i<pts.length-1;i++){const d=seg(pts[i],pts[0],pts[pts.length-1]);if(d>dMax){dMax=d;iMax=i;}}
+  if(dMax<=tol) return [pts[0],pts[pts.length-1]];
+  const l=simplify(pts.slice(0,iMax+1),tol), r=simplify(pts.slice(iMax),tol); return [...l.slice(0,-1),...r];
+}
+function routeFrom(a,pts){
+  const G=groupsOf(computeContacts(S.pieces));
+  const same=G.get(a.from)===G.get(a.to);
+  const RA=bboxOf(same?[a.from]:G.get(a.from),GAP), RB=bboxOf(same?[a.to]:G.get(a.to),GAP);
+  const inside=(r,p)=>p.x>r.x1&&p.x<r.x2&&p.y>r.y1&&p.y<r.y2;
+  /* là où le trait quitte la première carte, là où il entre dans la seconde */
+  const iOut=pts.findIndex(p=>!inside(RA,p)); if(iOut<1) return null;
+  let iIn=-1; for(let i=iOut;i<pts.length;i++) if(inside(RB,pts[i])){iIn=i;break;}
+  if(iIn<1) return null;
+  const sPt=exitPt(RA,pts[iOut-1],pts[iOut]), ePt=exitPt(RB,pts[iIn],pts[iIn-1]);
+  a.as=anchorOf(RA,sPt); a.ae=anchorOf(RB,ePt);
+  const g={s:anchorPt(RA,a.as),e:anchorPt(RB,a.ae)};
+  const mid=simplify([g.s,...pts.slice(iOut,iIn).filter(p=>!inside(RA,p)&&!inside(RB,p)),g.e],40).slice(1,-1).slice(0,12);
+  const d={x:g.e.x-g.s.x,y:g.e.y-g.s.y}, L2=d.x*d.x+d.y*d.y; if(L2<1||!mid.length){delete a.as;delete a.ae;return null;}
+  const r=mid.map(p=>{const q={x:p.x-g.s.x,y:p.y-g.s.y};return [+((q.x*d.x+q.y*d.y)/L2).toFixed(3),+((q.x*-d.y+q.y*d.x)/L2).toFixed(3)];})
+    .filter(([u])=>u>0.04&&u<0.96);
+  return r.length?r:null;
+}
+function swapArrow(a){const f=a.from;a.from=a.to;a.to=f;if(a.route){a.route=a.route.map(([u,v])=>[+(1-u).toFixed(3),-v]).reverse();const t=a.as;a.as=a.ae;a.ae=t;}}
+function finishLink(from,to,pts){
   if(!to||to===from||!byId(from)||!byId(to)){renderOverlay();return;}
   pushHistory();
   const a={id:uid('a'),from,to,kw:'permet',flip:false};
+  if(pts&&pts.length>3){const r=routeFrom(a,pts);if(r)a.route=r;else{delete a.as;delete a.ae;}}
   S.arrows.push(a); sel={type:'arrow',id:a.id}; commit();
   setTimeout(()=>openArrowPop(a.id),60);
 }
@@ -1141,8 +1211,9 @@ vp.addEventListener('contextmenu',e=>{
     const upd=f=>()=>{pushHistory();f(a);commit();};
     openCtx(e.clientX,e.clientY,[{hd:'Flèche'},
       ...Object.entries(KW).map(([k,v])=>({label:v.word,sw:v.line,on:a.kw===k,run:upd(x=>{x.kw=k;})})),'-',
-      {label:'Inverser le sens',run:upd(x=>{const f=x.from;x.from=x.to;x.to=f;})},
-      {label:'Changer de côté',run:upd(x=>{x.flip=!x.flip;})},'-',
+      {label:'Inverser le sens',run:upd(swapArrow)},
+      {label:'Changer de côté',run:upd(x=>{x.flip=!x.flip;})},
+      ...(a.route?[{label:'Redresser la flèche',run:upd(x=>{delete x.route;delete x.as;delete x.ae;})}]:[]),'-',
       {label:'Supprimer la flèche',k:'⌫',danger:1,run:deleteSel}]);
     return;
   }
@@ -1161,7 +1232,7 @@ vp.addEventListener('contextmenu',e=>{
   ctxPlace=wpos;
   openCtx(e.clientX,e.clientY,[
     {label:'Nouvelle pièce ici',k:'N',run:()=>openEditor(null)},
-    {label:tool==='link'?'Revenir à Déplacer':'Outil Relier',k:tool==='link'?'V':'L',run:()=>setTool(tool==='link'?'move':'link')},'-',
+    {label:tool==='link'?'Revenir à Déplacer':'Outil plume',k:tool==='link'?'V':'P',run:()=>setTool(tool==='link'?'move':'link')},'-',
     {label:'Ajuster la vue',k:'0',run:fitView},
     {label:'Zoomer',k:MOD+'+',run:()=>{userView=true;zoomAt(e.clientX,e.clientY,1.25);}},
     {label:'Dézoomer',k:MOD+'−',run:()=>{userView=true;zoomAt(e.clientX,e.clientY,.8);}},'-',
@@ -1183,25 +1254,25 @@ window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){closePop();if(!$('modal').hidden){closeModal();return;}if(drag&&drag.kind==='link'){drag=null;renderOverlay();}setTool('move');if(sel)select(null);return;}
   if(!$('modal').hidden||typing(e)) return;
   const mod=e.metaKey||e.ctrlKey, k=e.key.toLowerCase();
-  if(e.key===' '){spaceDown=true;e.preventDefault();return;}
+  if(e.key===' '){spaceDown=true;vp.classList.add('space');e.preventDefault();return;}
   if(mod&&k==='z'){e.preventDefault();e.shiftKey?redo():undo();return;}
   if(mod&&k==='y'){e.preventDefault();redo();return;}
   if(mod&&k==='d'){e.preventDefault();if(sel&&sel.type==='piece')duplicatePiece(sel.id);return;}
   if(mod) return;
   if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();deleteSel();}
   else if(k==='v') setTool('move');
-  else if(k==='l') setTool('link');
+  else if(k==='l'||k==='p') setTool(tool==='link'?'move':'link');
   else if(k==='n') openEditor(null);
   else if(e.key==='Enter'&&sel&&sel.type==='piece') openEditor(sel.id);
   else if(e.key==='+'||e.key==='=') zoomAt(innerWidth/2,innerHeight/2,1.25);
   else if(e.key==='-') zoomAt(innerWidth/2,innerHeight/2,.8);
   else if(e.key==='0') fitView();
 });
-window.addEventListener('keyup',e=>{if(e.key===' ')spaceDown=false;});
+window.addEventListener('keyup',e=>{if(e.key===' '){spaceDown=false;vp.classList.remove('space');}});
 
 /* ---------- Barre d'outils ---------- */
 function setTool(t){tool=t;$('tMove').classList.toggle('on',t==='move');$('tLink').classList.toggle('on',t==='link');vp.classList.toggle('tool-link',t==='link');
-  if(t==='link') toast('Relier : tire d’une carte vers une autre. Astuce : les petits points au bord des cartes font la même chose.');}
+  if(t==='link') toast('Plume : trace un trait d’une carte à une autre, la flèche suit ton tracé.');}
 $('tMove').onclick=()=>setTool('move');
 $('tLink').onclick=()=>setTool(tool==='link'?'move':'link');
 $('bAdd').onclick=()=>openEditor(null);
@@ -1350,7 +1421,7 @@ function openIntro(){
       <li>Approchez une carte d’une autre : leurs bords se changent en encoches. Lâchez, elles s’emboîtent. Côte à côte, elles prennent la même hauteur.</li>
       <li>Option (Alt) + glisser, ou appui long au doigt : la carte sort seule de son groupe.</li>
       <li>À chaque emboîtement, dites si la carte EXIGE ou PERMET sa voisine.</li>
-      <li>Pour relier deux groupes : survole une carte, attrape un des petits points sur ses bords et tire jusqu’à l’autre carte. Choisis ensuite permet, exige ou s’oppose à.</li>
+      <li>Pour relier deux groupes : attrape un des petits points au bord d’une carte et tire jusqu’à l’autre, ou prends la Plume et trace ton trait à main levée. Choisis ensuite permet, exige ou s’oppose à.</li>
     </ol>
     <div class="rule"></div>
     <form class="join" id="iForm">
@@ -1515,7 +1586,9 @@ function cleanLinks(v){
     if(isFinite(m.t)) o.t=clamp(+m.t,0,1);
     meta[k]=o;
   }
-  const arrows=(Array.isArray(v&&v.arrows)?v.arrows:[]).filter(a=>a&&idOk(a.id)&&idOk(a.from)&&idOk(a.to)&&KW[a.kw]).slice(0,200).map(a=>({id:a.id,from:a.from,to:a.to,kw:a.kw,flip:!!a.flip}));
+  const okRoute=r=>Array.isArray(r)&&r.length&&r.length<=12&&r.every(p=>Array.isArray(p)&&p.length===2&&isFinite(p[0])&&isFinite(p[1]));
+  const arrows=(Array.isArray(v&&v.arrows)?v.arrows:[]).filter(a=>a&&idOk(a.id)&&idOk(a.from)&&idOk(a.to)&&KW[a.kw]).slice(0,200).map(a=>{const o={id:a.id,from:a.from,to:a.to,kw:a.kw,flip:!!a.flip};const okA=x=>Array.isArray(x)&&x.length===2&&[0,1,2,3].includes(x[0])&&isFinite(x[1]);
+    if(okRoute(a.route)&&okA(a.as)&&okA(a.ae)){o.route=a.route.map(([u,v])=>[clamp(+u,-3,3),clamp(+v,-3,3)]);o.as=[a.as[0],clamp(+a.as[1],0,1)];o.ae=[a.ae[0],clamp(+a.ae[1],0,1)];}return o;});
   return {meta,arrows};
 }
 /* ---------- En ligne : Supabase joue le rôle de la base partagée et de la salle ---------- */
