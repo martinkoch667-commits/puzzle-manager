@@ -85,6 +85,7 @@ button{font:inherit;color:inherit}
 .chip.on{background:var(--mist);box-shadow:inset 0 -3px 0 var(--ink)}
 .chip:hover{background:var(--mist)}
 .ic{display:none;font-size:18px;line-height:1}
+.btn.hist{padding:8px 10px;display:grid;place-items:center}
 
 #pop{position:fixed;z-index:30;padding:10px;display:flex;gap:8px;align-items:center}
 #pop .pb{width:76px;height:76px;border-radius:50%;border:0;cursor:pointer;font-weight:500;display:grid;place-items:center;flex:none}
@@ -221,8 +222,8 @@ button{font:inherit;color:inherit}
 <div class="cursors" id="cursors"></div>
 <div class="panel" id="topr">
   <div id="people" aria-label="Personnes sur le plateau"></div>
-  <button class="btn" id="bUndo" title="Annuler (Cmd+Z)" aria-label="Annuler"><span class="tl">Annuler</span><span class="ic">↶</span></button>
-  <button class="btn" id="bRedo" title="Rétablir (Cmd+Maj+Z)" aria-label="Rétablir"><span class="tl">Rétablir</span><span class="ic">↷</span></button>
+  <button class="btn hist" id="bUndo" title="Annuler (⌘Z)" aria-label="Annuler"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+  <button class="btn hist" id="bRedo" title="Rétablir (⌘⇧Z)" aria-label="Rétablir"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
   <span class="sep"></span>
   <button class="btn wine" id="bShare" hidden>Partager</button>
   <button class="btn" id="bData" aria-label="Sauvegarde"><span class="tl">Sauvegarde</span><span class="ic">⇅</span></button>
@@ -760,7 +761,30 @@ const toScreen=(wx,wy)=>({x:wx*view.s+view.tx,y:wy*view.s+view.ty});
 
 /* ---------- Historique et sauvegarde ---------- */
 const snapshot=()=>JSON.stringify({pieces:S.pieces,meta:S.meta,arrows:S.arrows});
-function pushHistory(s=snapshot()){hist.push(s);if(hist.length>80)hist.shift();redoStack.length=0;updateHistBtns();}
+/* Historique par geste : on garde ce que MON geste a changé (cartes, flèches, jonctions), avant et après.
+   Annuler ne remet que ces éléments-là : les gestes des autres joueurs restent intacts. */
+let pendingBefore=null, pendingAt=0, applyingHist=false;
+function pushHistory(s=snapshot()){if(!pendingBefore||Date.now()-pendingAt>3000){pendingBefore=s;pendingAt=Date.now();}}
+function diffStates(b,a){
+  const e={pieces:{},arrows:{},meta:{}}; let n=0;
+  const one=(B,A,key)=>{const mb=new Map(B.map(x=>[x.id,x])),ma=new Map(A.map(x=>[x.id,x]));for(const id of new Set([...mb.keys(),...ma.keys()])){const x=mb.get(id)||null,y=ma.get(id)||null;if(JSON.stringify(x)!==JSON.stringify(y)){e[key][id]=[x,y];n++;}}};
+  one(b.pieces||[],a.pieces,'pieces'); one(b.arrows||[],a.arrows,'arrows');
+  const bm=b.meta||{}; for(const k of new Set([...Object.keys(bm),...Object.keys(a.meta)])){const x=bm[k]||null,y=a.meta[k]||null;if(JSON.stringify(x)!==JSON.stringify(y)){e.meta[k]=[x,y];n++;}}
+  return n?e:null;
+}
+function recordHistory(){
+  if(!pendingBefore) return;
+  const b=JSON.parse(pendingBefore); pendingBefore=null;
+  const d=diffStates(b,{pieces:S.pieces,meta:S.meta,arrows:S.arrows});
+  if(d){hist.push(clone(d));if(hist.length>150)hist.shift();redoStack.length=0;}
+  updateHistBtns();
+}
+function applyEntry(e,idx){
+  const put=(list,id,val)=>{const i=list.findIndex(x=>x.id===id);if(val){if(i>=0)list[i]=clone(val);else list.push(clone(val));}else if(i>=0)list.splice(i,1);};
+  Object.entries(e.pieces).forEach(([id,v])=>put(S.pieces,id,v[idx]));
+  Object.entries(e.arrows).forEach(([id,v])=>put(S.arrows,id,v[idx]));
+  Object.entries(e.meta).forEach(([k,v])=>{if(v[idx])S.meta[k]=clone(v[idx]);else delete S.meta[k];});
+}
 function normalize(d){
   const pieces=(d.pieces||[]).map(p=>({id:p.id,num:p.num||'',title:p.title||'',desc:p.desc||'',src:p.src||'',color:p.color||'#9F0049',x:+p.x||0,y:+p.y||0,w:+p.w||445,h:+p.h||530,h0:+(p.h0||p.h)||530,w0:+(p.w0||p.w)||445}));
   return {pieces,meta:d.meta||{},arrows:(d.arrows||[]).filter(a=>KW[a.kw])};
@@ -771,8 +795,9 @@ function loadState(d){
   if(sel&&sel.type==='arrow'&&!S.arrows.find(a=>a.id===sel.id)) sel=null;
   commit(false);
 }
-function undo(){if(!hist.length)return;redoStack.push(snapshot());loadState(JSON.parse(hist.pop()));}
-function redo(){if(!redoStack.length)return;hist.push(snapshot());loadState(JSON.parse(redoStack.pop()));}
+function undo(){const e=hist.pop();if(!e)return;pendingBefore=null;applyEntry(e,0);redoStack.push(e);applyingHist=true;commit(false);applyingHist=false;fixSel();updateHistBtns();}
+function redo(){const e=redoStack.pop();if(!e)return;pendingBefore=null;applyEntry(e,1);hist.push(e);applyingHist=true;commit(false);applyingHist=false;fixSel();updateHistBtns();}
+function fixSel(){if(sel&&sel.type==='piece'&&!byId(sel.id))sel=null;if(sel&&sel.type==='arrow'&&!S.arrows.find(a=>a.id===sel.id))sel=null;renderSelbar();}
 function updateHistBtns(){$('bUndo').disabled=!hist.length;$('bRedo').disabled=!redoStack.length;}
 let saveT=0;
 function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(STORE,snapshot());}catch(e){}},250);}
@@ -787,8 +812,10 @@ function tidy(){
   Object.keys(S.meta).forEach(k=>{if(ks.has(k))return;const [a,b]=k.split('|');if(remoteDrag.has(a)||remoteDrag.has(b))return;delete S.meta[k];});
 }
 function commit(prune=true){
-  if(sync.readOnly){revertToRemote();toast('Tu peux regarder la partie, pas la modifier : demande à l’organisateur de te passer Contributeur.');return Promise.resolve();}
-  if(prune)tidy();S.arrows=S.arrows.filter(a=>byId(a.from)&&byId(a.to));renderAll();save();
+  if(sync.readOnly){pendingBefore=null;revertToRemote();toast('Tu peux regarder la partie, pas la modifier : demande à l’organisateur de te passer Contributeur.');return Promise.resolve();}
+  if(prune)tidy();S.arrows=S.arrows.filter(a=>byId(a.from)&&byId(a.to));
+  if(!applyingHist) recordHistory();
+  renderAll();save();
   return pushRemote();
 }
 
@@ -1542,7 +1569,7 @@ function applyRemote(force){
     const L=remoteCache.links, lj=JSON.stringify({meta:L.meta||{},arrows:L.arrows||[]});
     if(lj!==JSON.stringify({meta:S.meta,arrows:S.arrows})){S.meta=clone(L.meta||{});S.arrows=clone(L.arrows||[]).filter(a=>KW[a.kw]);changed=true;}
   }
-  if(changed){hist.length=0;redoStack.length=0;}
+
   if(sel&&sel.type==='piece'&&!byId(sel.id)) sel=null;
   renderAll();
   return changed;
