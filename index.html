@@ -14,7 +14,8 @@ html,body{height:100%;overscroll-behavior:none;touch-action:manipulation}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f);overflow:hidden;-webkit-font-smoothing:antialiased;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 button{font:inherit;color:inherit}
-#vp{position:fixed;inset:0;overflow:hidden;touch-action:none;background:var(--paper)}
+#vp{position:fixed;inset:0;overflow:hidden;touch-action:none;background:var(--paper);-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.mob{display:none!important}
 #vp.panning{cursor:grabbing}
 #vp.space,#vp.space .piece .sh path{cursor:grab}
 .world{position:absolute;left:0;top:0;transform-origin:0 0}
@@ -74,10 +75,10 @@ button{font:inherit;color:inherit}
 .round:hover{background:#E7E7E2}
 #zval{font-size:13px;font-variant-numeric:tabular-nums;width:46px;text-align:center;flex:none}
 #legend{left:max(16px,env(safe-area-inset-left,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:16px 18px;display:flex;flex-direction:column;gap:10px;font-size:14px}
-#legend .lt{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55}
-#legend .lg{display:flex;align-items:center;gap:12px;font-weight:700}
-#legend .lg i{width:26px;height:22px;display:block;flex:none}
-#legend .lg .mini{width:30px;height:30px;border-radius:50%;flex:none;background:#fff;box-shadow:0 2px 8px rgba(17,17,17,.2);display:grid;place-items:center;font-size:8px;font-weight:500}
+#legend .lt,.mleg .lt{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55}
+#legend .lg,.mleg .lg{display:flex;align-items:center;gap:12px;font-weight:700}
+#legend .lg i,.mleg .lg i{width:26px;height:22px;display:block;flex:none}
+#legend .lg .mini,.mleg .lg .mini{width:30px;height:30px;border-radius:50%;flex:none;background:#fff;box-shadow:0 2px 8px rgba(17,17,17,.2);display:grid;place-items:center;font-size:8px;font-weight:500}
 #selbar{top:calc(16px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:6px;max-width:calc(100% - 32px);overflow-x:auto;scrollbar-width:none}
 #selbar .what{font-size:13px;padding:0 10px 0 8px;white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;flex:none}
 #selbar .what b{font-weight:500;text-transform:uppercase}
@@ -194,20 +195,57 @@ button{font:inherit;color:inherit}
 #sync{font-size:12px;opacity:.6;display:flex;gap:6px;align-items:center}
 #sync i{width:7px;height:7px;border-radius:50%;background:#9E960A;display:block}
 #sync.off i{background:#FE8D5D}
+/* Menu du téléphone : une feuille qui monte du bas */
+.modal.bottom{place-items:end stretch;padding:0}
+.msheet{max-width:none;max-height:86%;padding:6px 8px calc(14px + env(safe-area-inset-bottom,0px));box-sizing:border-box;animation:sheet-up .22s cubic-bezier(.2,.9,.3,1)}
+@keyframes sheet-up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.msheet .grab{width:42px;height:4px;border-radius:2px;background:var(--ink);opacity:.16;margin:6px auto 10px}
+.mit{display:flex;align-items:center;gap:14px;width:100%;border:0;background:transparent;padding:14px 12px;text-align:left;cursor:pointer;font:inherit;font-size:16px;color:var(--ink)}
+.mit:active,.mit:focus-visible{background:var(--mist);outline:none}
+.mit svg{flex:none;opacity:.85}
+.mit.wine{color:var(--wine);font-weight:500}
+.msheet .sp{height:1px;background:var(--ink);opacity:.1;margin:6px 8px}
+.mleg{display:flex;flex-direction:column;gap:10px;font-size:14px;padding:12px 12px 4px}
+.mleg .cols2{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.mleg .mleg{padding:0}
+@media (pointer:coarse){
+  .ctx{min-width:250px}
+  .ctx .it{padding:13px 12px;font-size:15px}
+  .ctx .it .k{display:none}
+}
 @media (max-width:760px){
-  #people .av:nth-child(n+4){display:none}
+  .desk{display:none!important}
+  .mob{display:grid!important}
+  #people .av:nth-child(n+3){display:none}
   .tl{display:none}.ic{display:inline}
   #topr .btn{padding:8px 10px}
-  #head{max-width:calc(100% - 230px);padding:10px 12px}
-  #head h1{font-size:15px}
+  #topr{padding:4px}
+  #head{max-width:calc(100% - 42px - var(--toprw,170px));padding:9px 12px;gap:2px;box-sizing:border-box}
+  #head h1{font-size:11px;letter-spacing:.08em;opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #head .sub{display:none}
+  #prog{margin-top:0;font-size:13px;min-width:0}
+  #progTxt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  #sync{display:none}
+  #bar{gap:4px;padding:5px}
+  #bar .btn{padding:11px 12px}
+  #bar .btn svg{margin-right:0!important}
+  #bar .btn.wine{padding:11px 14px}
+  #pop{flex-wrap:wrap;justify-content:center;max-width:calc(100% - 24px);box-sizing:border-box}
+  #toast{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
   #legend{display:none}
   .ed{grid-template-columns:minmax(0,1fr)}
+  .data{padding:22px 18px}
+  .lib-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lib-card{min-height:88px}
   .ed-stage{min-height:0;padding:24px 16px}
   .ed-side{padding:20px}
+  .ed-side .acts{position:sticky;bottom:0;z-index:2;background:#fff;margin:0 -20px -20px;padding:12px 20px calc(14px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 18px rgba(17,17,17,.08)}
   .intro{padding:64px 28px 40px}
   .intro .ttl{font-size:26px}
-  #selbar{top:calc(110px + env(safe-area-inset-top,0px))}
+  #selbar{top:calc(74px + env(safe-area-inset-top,0px))}
+  #selbar .what{display:none}
+  #selbar,#bar{box-sizing:border-box}
+  #selbar .btn{padding:10px 11px}
 }
 @media (prefers-reduced-motion:reduce){.piece.snapping{transition:none}.hd{animation:none;transition:none}.badge.vide{animation:none;transition:none}}
 </style>
@@ -232,15 +270,15 @@ button{font:inherit;color:inherit}
 <div class="cursors" id="cursors"></div>
 <div class="panel" id="topr">
   <div id="people" aria-label="Personnes sur le plateau"></div>
-  <button class="btn" id="bSave" title="Enregistrer une version du plateau">Enregistrer</button>
-  <span class="sep"></span>
+  <button class="btn desk" id="bSave" title="Enregistrer une version du plateau">Enregistrer</button>
+  <span class="sep desk"></span>
   <button class="btn hist" id="bUndo" title="Annuler (⌘Z)" aria-label="Annuler"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
   <button class="btn hist" id="bRedo" title="Rétablir (⌘⇧Z)" aria-label="Rétablir"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
-  <span class="sep"></span>
-  <button class="btn wine" id="bShare" hidden>Partager</button>
-  <button class="btn" id="bData" aria-label="Sauvegarde"><span class="tl">Sauvegarde</span><span class="ic">⇅</span></button>
-  <button class="round" id="bSettings" title="Paramètres" aria-label="Paramètres"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
-  <button class="round" id="bHelp" title="Règles du jeu" aria-label="Règles du jeu">?</button>
+  <span class="sep desk"></span>
+  <button class="btn wine desk" id="bShare" hidden>Partager</button>
+  <button class="btn desk" id="bData" aria-label="Sauvegarde"><span class="tl">Sauvegarde</span><span class="ic">⇅</span></button>
+  <button class="round desk" id="bSettings" title="Paramètres" aria-label="Paramètres"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+  <button class="round desk" id="bHelp" title="Règles du jeu" aria-label="Règles du jeu">?</button>
 </div>
 
 <div class="panel" id="selbar" hidden></div>
@@ -257,20 +295,22 @@ button{font:inherit;color:inherit}
 
 <nav class="panel" id="bar">
   <div class="grp">
-    <button class="btn on" id="tMove" title="Déplacer (V)"><svg width="14" height="15" viewBox="0 0 22 22" style="vertical-align:-2px;margin-right:6px" aria-hidden="true"><path d="M4.2 3.1 L19.4 9.4 L12.3 11.9 L9.6 18.9 Z" fill="currentColor" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>Déplacer</button>
-    <button class="btn" id="tLink" title="Plume : trace une flèche d’une carte à l’autre (P)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px" aria-hidden="true"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>Plume</button>
+    <button class="btn on" id="tMove" title="Déplacer (V)"><svg width="14" height="15" viewBox="0 0 22 22" style="vertical-align:-2px;margin-right:6px" aria-hidden="true"><path d="M4.2 3.1 L19.4 9.4 L12.3 11.9 L9.6 18.9 Z" fill="currentColor" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg><span class="tl">Déplacer</span></button>
+    <button class="btn" id="tLink" title="Plume : trace une flèche d’une carte à l’autre (P)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px" aria-hidden="true"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg><span class="tl">Plume</span></button>
   </div>
   <span class="sep"></span>
   <button class="btn wine" id="bAdd">+ Pièce</button>
-  <button class="btn" id="bLib" title="Bibliothèque : toutes les cartes, même celles qui manquent (B)">Bibliothèque</button>
-  <span class="sep"></span>
-  <div class="grp">
+  <button class="btn" id="bLib" title="Bibliothèque : toutes les cartes, même celles qui manquent (B)" aria-label="Bibliothèque"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5"/><rect x="13.5" y="3" width="7.5" height="7.5"/><rect x="3" y="13.5" width="7.5" height="7.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5"/></svg><span class="tl">Bibliothèque</span></button>
+  <span class="sep mob"></span>
+  <button class="btn hist mob" id="bMore" aria-label="Plus d’actions"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2.1"/><circle cx="12" cy="12" r="2.1"/><circle cx="19" cy="12" r="2.1"/></svg></button>
+  <span class="sep desk"></span>
+  <div class="grp desk">
     <button class="btn" id="bShuffle">Mélanger</button>
     <button class="btn" id="bSolution">Solution</button>
     <button class="btn" id="bVerify">Vérifier</button>
   </div>
-  <span class="sep"></span>
-  <div class="grp">
+  <span class="sep desk"></span>
+  <div class="grp desk">
     <button class="round" id="zOut" aria-label="Dézoomer">−</button>
     <span id="zval">20%</span>
     <button class="round" id="zIn" aria-label="Zoomer">+</button>
@@ -901,7 +941,7 @@ function verify(){
   const arr=SOLN.arrows.filter(s=>S.arrows.some(a=>a.from===s.from&&a.to===s.to&&a.kw===s.kw)).length;
   return {asm,asmTot:solC.length,rel,relTot:SOLN.rel.length,arr,arrTot:SOLN.arrows.length};
 }
-function updateProgress(){const v=verify();$('progTxt').textContent=`${v.asm} / ${v.asmTot} assemblages`+(REF?' · référence du groupe':'');}
+function updateProgress(){const v=verify();$('progTxt').innerHTML=`${v.asm} / ${v.asmTot} assemblages`+(REF?'<span class="desk"> · référence du groupe</span>':'');}
 function doVerify(){
   const v=verify(), all=v.asm===v.asmTot&&v.rel===v.relTot&&v.arr===v.arrTot;
   toast(all?'Carte reconstituée : assemblages, jonctions et flèches sont justes.':`Assemblages ${v.asm}/${v.asmTot} · Jonctions ${v.rel}/${v.relTot} · Flèches ${v.arr}/${v.arrTot}`);
@@ -1054,11 +1094,13 @@ function startPieceDrag(e,pid){
   const start=new Map([...G].map(id=>{const p=byId(id);return [id,{x:p.x,y:p.y}];}));
   drag={kind:'piece',pid,G,start,sx:e.clientX,sy:e.clientY,moved:false,snap:null,before:snapshot(),resizable:resizableIn(G,contacts)};
   if(e.pointerType==='touch'&&!solo){
+    /* appui long : la carte se soulève seule. Relâchée sur place, elle ouvre son menu ; glissée, elle sort de son groupe */
+    drag.touch=true;
     drag.lp=setTimeout(()=>{
       if(drag&&drag.kind==='piece'&&!drag.moved){
+        drag.long=true; drag.wasGroup=drag.G.size>1;
         drag.G=new Set([pid]); drag.start=new Map([[pid,{x:byId(pid).x,y:byId(pid).y}]]); drag.resizable=new Set([pid]);
-        els.get(pid)&&els.get(pid).classList.add('lift'); try{navigator.vibrate&&navigator.vibrate(12);}catch(_){}
-        toast('Pièce sortie de son groupe');
+        els.get(pid)&&els.get(pid).classList.add('lift'); buzz();
       }
     },450);
   }
@@ -1071,12 +1113,16 @@ function resizableIn(G,contacts){
   contacts.forEach(c=>{if(G.has(c.a)&&G.has(c.b)&&c.axis==='x'){ok.delete(c.a);ok.delete(c.b);}});
   return ok;
 }
+const buzz=()=>{try{navigator.vibrate&&navigator.vibrate(12);}catch(_){}};
+let lastPtr='mouse', lastTap=null;
 vp.addEventListener('pointerdown',e=>{
+  lastPtr=e.pointerType;
   if(!$('modal').hidden) return;
   closePop();
   if(e.pointerType==='touch'){
     touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(touches.size===2){
+      if(drag&&drag.lp) clearTimeout(drag.lp);
       if(drag&&drag.kind==='piece'){clearTimeout(drag.lp);drag.G.forEach(id=>{const s=drag.start.get(id),p=byId(id);p.x=s.x;p.y=s.y;els.get(id)&&els.get(id).classList.remove('lift');});hint=null;}
       const [a,b]=[...touches.values()];
       pinch={d:Math.hypot(a.x-b.x,a.y-b.y),mx:(a.x+b.x)/2,my:(a.y+b.y)/2,view:{...view}}; drag=null; renderAll(); return;
@@ -1106,6 +1152,10 @@ vp.addEventListener('pointerdown',e=>{
   }
   if(sel) select(null);
   drag={kind:'pan',sx:e.clientX,sy:e.clientY,tx:view.tx,ty:view.ty};
+  if(e.pointerType==='touch'){
+    const d0=drag;
+    d0.lp=setTimeout(()=>{if(drag===d0&&!d0.moved&&touches.size===1){drag=null;vp.classList.remove('panning');buzz();ctxBoard(d0.sx,d0.sy);}},520);
+  }
   vp.classList.add('panning'); capture(e);
 });
 let raf=0;
@@ -1121,7 +1171,9 @@ vp.addEventListener('pointermove',e=>{
     if(e.pointerType==='mouse'){const hd=e.target.closest&&e.target.closest('.hd');const P=hd?byId(hd.dataset.hpid):pieceAt(toWorld(e.clientX,e.clientY));setHover(P?P.id:null);}
     return;
   }
-  if(drag.kind==='pan'){userView=true;view.tx=drag.tx+e.clientX-drag.sx;view.ty=drag.ty+e.clientY-drag.sy;applyView();return;}
+  if(drag.kind==='pan'){
+    if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>8){drag.moved=true;clearTimeout(drag.lp);}
+    userView=true;view.tx=drag.tx+e.clientX-drag.sx;view.ty=drag.ty+e.clientY-drag.sy;applyView();return;}
   if(drag.kind==='link'){
     drag.cur=toWorld(e.clientX,e.clientY);
     if(drag.pen){const l=drag.pts[drag.pts.length-1];if(Math.hypot(drag.cur.x-l.x,drag.cur.y-l.y)>10/view.s&&drag.pts.length<600)drag.pts.push(drag.cur);}
@@ -1130,7 +1182,7 @@ vp.addEventListener('pointermove',e=>{
   }
   if(drag.kind==='piece'){
     const dxs=e.clientX-drag.sx, dys=e.clientY-drag.sy;
-    if(!drag.moved){if(Math.hypot(dxs,dys)<4)return;drag.moved=true;clearTimeout(drag.lp);drag.G.forEach(id=>els.get(id)&&els.get(id).classList.add('lift'));$('selbar').hidden=true;}
+    if(!drag.moved){if(Math.hypot(dxs,dys)<(drag.touch?9:4))return;drag.moved=true;clearTimeout(drag.lp);if(drag.long&&drag.wasGroup)toast('Pièce sortie de son groupe');drag.G.forEach(id=>els.get(id)&&els.get(id).classList.add('lift'));$('selbar').hidden=true;}
     const dx=dxs/view.s, dy=dys/view.s;
     drag.G.forEach(id=>{const s=drag.start.get(id),p=byId(id);p.x=s.x+dx;p.y=s.y+dy;});
     if(drag.G.size<=24) sendPresence({drag:[...drag.G].map(id=>{const p=byId(id);return [id,Math.round(p.x),Math.round(p.y)];})});
@@ -1145,10 +1197,21 @@ function endPointer(e){
   if(e.pointerType==='touch'){touches.delete(e.pointerId);if(pinch){if(touches.size<2)pinch=null;return;}}
   if(!drag) return;
   const d=drag; drag=null; vp.classList.remove('panning');
+  if(d.lp) clearTimeout(d.lp);
   if(d.kind==='piece'){
     clearTimeout(d.lp); hint=null;
     d.G.forEach(id=>els.get(id)&&els.get(id).classList.remove('lift'));
-    if(!d.moved){renderAll();sendPresence({drag:null});return;}
+    if(!d.moved){
+      renderAll();sendPresence({drag:null});
+      if(e.type==='pointerup'&&d.long) ctxPiece(d.pid,d.sx,d.sy);
+      else if(e.type==='pointerup'&&d.touch){
+        /* double tap = modifier, comme le double clic */
+        const now=Date.now();
+        if(lastTap&&lastTap.pid===d.pid&&now-lastTap.t<380&&Math.hypot(lastTap.x-d.sx,lastTap.y-d.sy)<40){lastTap=null;openEditor(d.pid);}
+        else lastTap={pid:d.pid,t:now,x:d.sx,y:d.sy};
+      }
+      return;
+    }
     const before=new Set(computeContacts(JSON.parse(d.before).pieces).map(c=>c.key));
     const sn=findSnap(d.G,d.resizable);
     d.G.forEach(id=>{const p=byId(id);if(sn){if(id===sn.a){p.x=sn.A2.x;p.y=sn.A2.y;p.w=sn.A2.w;p.h=sn.A2.h;}else{p.x+=sn.dx;p.y+=sn.dy;}}else{p.x=Math.round(p.x);p.y=Math.round(p.y);}});
@@ -1194,7 +1257,7 @@ let gs=1;
 vp.addEventListener('gesturestart',e=>{e.preventDefault();gs=1;userView=true;});
 vp.addEventListener('gesturechange',e=>{e.preventDefault();zoomAt(e.clientX,e.clientY,e.scale/gs);gs=e.scale;});
 vp.addEventListener('gestureend',e=>e.preventDefault());
-vp.addEventListener('dblclick',e=>{const p=e.target.closest&&e.target.closest('[data-pid]');if(p&&tool==='move')openEditor(p.dataset.pid);});
+vp.addEventListener('dblclick',e=>{if(lastPtr==='touch')return;const p=e.target.closest&&e.target.closest('[data-pid]');if(p&&tool==='move')openEditor(p.dataset.pid);});
 
 /* ---------- Poser une flèche : poignées, carte visée, choix du mot ---------- */
 /* la carte sous un point du plateau, celle du dessus d'abord (on ne demande pas au navigateur : une flèche ou une pastille pourrait masquer la carte) */
@@ -1282,10 +1345,10 @@ function openCtx(x,y,items){
 }
 function startLinkFrom(pid){
   setTool('link'); drag={kind:'link',from:pid,cur:null,target:null,pending:true}; sel=null; renderSelbar();
-  toast('Clique sur la carte à relier. Échap pour annuler.');
+  toast(matchMedia('(pointer:coarse)').matches?'Touche la carte à relier.':'Clique sur la carte à relier. Échap pour annuler.');
 }
 vp.addEventListener('contextmenu',e=>{
-  e.preventDefault(); if(!$('modal').hidden) return;
+  e.preventDefault(); if(!$('modal').hidden||lastPtr==='touch') return;
   closePop();
   const t=e.target, bk=t.closest&&t.closest('.badge'), pidEl=t.closest&&t.closest('[data-pid]'), aidEl=t.closest&&t.closest('[data-aid]');
   const wpos=toWorld(e.clientX,e.clientY);
@@ -1307,31 +1370,36 @@ vp.addEventListener('contextmenu',e=>{
       {label:'Supprimer la flèche',k:'⌫',danger:1,run:deleteSel}]);
     return;
   }
-  if(pidEl){
-    const pid=pidEl.dataset.pid, p=byId(pid); if(!p) return;
+  if(pidEl){ctxPiece(pidEl.dataset.pid,e.clientX,e.clientY);return;}
+  ctxBoard(e.clientX,e.clientY);
+});
+function ctxPiece(pid,cx,cy){
+  closePop();
+    const p=byId(pid); if(!p) return;
     select({type:'piece',id:pid});
     const inGroup=groupOf(pid).size>1;
-    openCtx(e.clientX,e.clientY,[{hd:(p.num?p.num+' · ':'')+p.title},
+    openCtx(cx,cy,[{hd:(p.num?p.num+' · ':'')+p.title},
       {label:'Modifier',k:'Entrée',run:()=>openEditor(pid)},
       {label:'Dupliquer',k:MOD+'D',run:()=>duplicatePiece(pid)},
       ...(inGroup?[{label:'Détacher du groupe',k:'⌥ glisser',run:()=>detachPiece(pid)}]:[]),
       {label:'Relier à une autre carte',k:'L',run:()=>startLinkFrom(pid)},'-',
       ...(BASE_IDS.has(pid)?[{label:'Ranger à l’écart',run:()=>{pushHistory();moveToFree([pid],Math.PI/2);const q=byId(pid);q.y+=400;moveToFree([pid],Math.PI/2);commit();}}]:[{label:'Mettre à la corbeille',k:'⌫',danger:1,run:()=>deletePiece(pid)}])]);
-    return;
-  }
-  ctxPlace=wpos;
-  openCtx(e.clientX,e.clientY,[
+}
+function ctxBoard(cx,cy){
+  closePop(); if(sel) select(null);
+  ctxPlace=toWorld(cx,cy);
+  openCtx(cx,cy,[
     {label:'Nouvelle pièce ici',k:'N',run:()=>openEditor(null)},
     {label:'Bibliothèque des cartes',k:'B',run:openLibrary},
     {label:tool==='link'?'Revenir à Déplacer':'Outil plume',k:tool==='link'?'V':'P',run:()=>setTool(tool==='link'?'move':'link')},'-',
     {label:'Ajuster la vue',k:'0',run:fitView},
-    {label:'Zoomer',k:MOD+'+',run:()=>{userView=true;zoomAt(e.clientX,e.clientY,1.25);}},
-    {label:'Dézoomer',k:MOD+'−',run:()=>{userView=true;zoomAt(e.clientX,e.clientY,.8);}},'-',
+    {label:'Zoomer',k:MOD+'+',run:()=>{userView=true;zoomAt(cx,cy,1.25);}},
+    {label:'Dézoomer',k:MOD+'−',run:()=>{userView=true;zoomAt(cx,cy,.8);}},'-',
     {label:'Annuler',k:MOD+'Z',run:undo},
     {label:'Vérifier ma carte',run:doVerify},
     {label:'Mélanger les pièces',run:doShuffle},
     {label:'Voir la solution',run:doSolution}]);
-});
+}
 window.addEventListener('pointerdown',e=>{if(!$('ctx').hidden&&!e.target.closest('#ctx'))closeCtx();},true);
 window.addEventListener('blur',closeCtx);
 
@@ -1382,6 +1450,33 @@ $('bShare').onclick=openShare;
 $('bSave').onclick=openSaves;
 $('bLib').onclick=openLibrary;
 $('bSettings').onclick=openSettings;
+$('bMore').onclick=openMenu;
+/* le titre prend la place que laissent les boutons de droite */
+try{new ResizeObserver(()=>document.documentElement.style.setProperty('--toprw',$('topr').offsetWidth+'px')).observe($('topr'));}catch(_){}
+/* Sur téléphone, ce qui ne tient pas dans les barres passe dans ce menu */
+function openMenu(){
+  const I=(d,w=20)=>`<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const items=[
+    {l:'Enregistrer une version',ic:I('<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3"/><path d="M8 21v-7h8v7"/>'),run:openSaves},
+    window.PUZZLE_ONLINE?{l:'Partager le plateau',wine:1,ic:I('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>'),run:openShare}
+      :{l:'Sauvegarde du plateau',ic:I('<path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4"/>'),run:openData},
+    '-',
+    {l:'Vérifier ma carte',ic:I('<path d="M4 12.5l5 5L20 6.5"/>'),run:doVerify},
+    {l:'Mélanger les pièces',ic:I('<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>'),run:doShuffle},
+    {l:'Voir la solution',ic:I('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),run:doSolution},
+    {l:'Ajuster la vue',ic:I('<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>'),run:fitView},
+    '-',
+    {l:'Paramètres',ic:I('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'),run:openSettings},
+    {l:'Règles du jeu',ic:I('<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>'),run:openIntro}];
+  const L=[...$('legend').querySelectorAll('.lg')].map(x=>x.outerHTML);
+  openModal(`<div class="sheet msheet" role="dialog" aria-modal="true" aria-label="Plus d’actions"><div class="grab"></div>
+    ${items.map((it,i)=>it==='-'?'<div class="sp"></div>':`<button type="button" class="mit${it.wine?' wine':''}" data-i="${i}">${it.ic}<span>${esc(it.l)}</span></button>`).join('')}
+    <div class="sp"></div>
+    <div class="mleg"><div class="cols2"><div class="mleg"><div class="lt">Flèches</div>${L.slice(0,3).join('')}</div><div class="mleg"><div class="lt">Jonctions</div>${L.slice(3).join('')}</div></div></div>
+  </div>`);
+  const m=$('modal'); m.classList.add('bottom');
+  m.querySelector('.msheet').onclick=e=>{const b=e.target.closest('[data-i]');if(!b)return;const it=items[+b.dataset.i];closeModal();it.run();};
+}
 if(window.PUZZLE_ONLINE){$('bShare').hidden=false;$('bData').hidden=true;}
 window.addEventListener('resize',()=>{closePop();if(!userView)fitView();if(editor&&$('edCard')){readEd();renderEdCard(false);}});
 
@@ -1395,7 +1490,7 @@ function toast(msg,withUndo=false){
 
 /* ---------- Fenêtres ---------- */
 function openModal(html){const m=$('modal');m.innerHTML=html;m.hidden=false;}
-function closeModal(){$('modal').hidden=true;$('modal').innerHTML='';editor=null;}
+function closeModal(){const m=$('modal');m.hidden=true;m.innerHTML='';m.classList.remove('bottom');editor=null;}
 $('modal').addEventListener('pointerdown',e=>{if(e.target.id==='modal')closeModal();});
 
 /* Création et modification : on écrit sur la carte elle-même */
@@ -1407,7 +1502,7 @@ function openEditor(id){
   const fmtKey=()=>Object.keys(FORMATS).find(k=>FORMATS[k].w===d.w&&FORMATS[k].h===d.h)||'';
   openModal(`<div class="sheet ed" role="dialog" aria-modal="true" aria-labelledby="edT">
     <div class="ed-stage"><div class="ed-card" id="edCard"></div>
-      <div class="hint">Cliquez sur un texte de la carte pour l’écrire. Le texte se resserre tout seul s’il manque de place.</div></div>
+      <div class="hint">${matchMedia('(pointer:coarse)').matches?'Touchez':'Cliquez sur'} un texte de la carte pour l’écrire. Le texte se resserre tout seul s’il manque de place.</div></div>
     <div class="ed-side">
       <h2 id="edT">${id?'Modifier la pièce':'Nouvelle pièce'}</h2>
       <div class="blk"><span class="lab">Couleur</span><div class="fams" id="fColors">${FAMILIES.map(f=>`<div class="fam"><i style="background:${f.deep}" title="${f.n}"></i>${f.c.map(c=>`<button type="button" class="sw${c===d.color?' on':''}" data-c="${c}" style="background:${c}" aria-label="${f.n} ${c}"></button>`).join('')}</div>`).join('')}</div></div>
@@ -1514,7 +1609,8 @@ function openIntro(){
     <ol>
       <li>Chaque carte est une notion du cours. À vous de décider lesquelles vont ensemble.</li>
       <li>Approchez une carte d’une autre : leurs bords se changent en encoches. Lâchez, elles s’emboîtent. Côte à côte, elles prennent la même hauteur.</li>
-      <li>Option (Alt) + glisser, ou appui long au doigt : la carte sort seule de son groupe.</li>
+      <li>Option (Alt) + glisser, ou appui long puis glisser au doigt : la carte sort seule de son groupe.</li>
+      <li>Au téléphone : deux doigts pour zoomer et se déplacer, double tap sur une carte pour la modifier, appui long pour son menu.</li>
       <li>À chaque emboîtement, dites si la carte EXIGE ou PERMET sa voisine.</li>
       <li>Pour relier deux groupes : attrape un des petits points au bord d’une carte et tire jusqu’à l’autre, ou prends la Plume et trace ton trait à main levée. Choisis ensuite permet, exige ou s’oppose à.</li>
     </ol>
@@ -1632,7 +1728,7 @@ function renderVersionList(){
 function openLibrary(){
   openModal(`<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lbT" style="max-width:820px"><div class="data">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h2 id="lbT" style="margin-right:auto">Bibliothèque</h2><span id="libAll"></span><button class="btn" id="lbClose">Fermer</button></div>
-    <div class="hint">Toutes les cartes du jeu. Clique sur une carte présente pour aller la voir, sur une carte absente pour la remettre sur le plateau.</div>
+    <div class="hint">Toutes les cartes du jeu. ${matchMedia('(pointer:coarse)').matches?'Touche une carte présente pour aller la voir, une carte absente':'Clique sur une carte présente pour aller la voir, sur une carte absente'} pour la remettre sur le plateau.</div>
     <div id="libBody" style="display:flex;flex-direction:column;gap:16px"></div>
   </div></div>`);
   $('lbClose').onclick=closeModal;
