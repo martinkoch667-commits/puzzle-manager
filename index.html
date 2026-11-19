@@ -102,6 +102,15 @@ button{font:inherit;color:inherit}
 .hd:hover{scale:1.3}
 @keyframes hd-in{from{opacity:0;scale:.5}to{opacity:1;scale:1}}
 #pop .chip{border-radius:0}
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.lib-card{position:relative;border:0;cursor:pointer;text-align:left;padding:10px 10px 12px;min-height:96px;display:flex;flex-direction:column;gap:4px;font:inherit}
+.lib-card .n{font-weight:700;font-size:15px}
+.lib-card .t{font-weight:500;font-size:12px;text-transform:uppercase;line-height:1.15}
+.lib-card .s{margin-top:auto;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.8}
+.lib-card.out{opacity:.55;outline:2px dashed var(--ink);outline-offset:-4px}
+.lib-card.out .s{opacity:1}
+.lib-card:hover,.lib-card:focus-visible{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--ink);outline:none}
+.lib-card.out:hover,.lib-card.out:focus-visible{opacity:1}
 .ctx{position:fixed;z-index:45;background:#fff;box-shadow:0 12px 36px rgba(17,17,17,.22);padding:6px;min-width:230px;max-width:calc(100% - 24px);font-size:14px;user-select:none;-webkit-user-select:none}
 .ctx .it{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;padding:9px 10px;text-align:left;cursor:pointer;font:inherit;font-size:14px;color:var(--ink)}
 .ctx .it:hover,.ctx .it:focus-visible{background:var(--mist);outline:none}
@@ -253,6 +262,7 @@ button{font:inherit;color:inherit}
   </div>
   <span class="sep"></span>
   <button class="btn wine" id="bAdd">+ Pièce</button>
+  <button class="btn" id="bLib" title="Bibliothèque : toutes les cartes, même celles qui manquent (B)">Bibliothèque</button>
   <span class="sep"></span>
   <div class="grp">
     <button class="btn" id="bShuffle">Mélanger</button>
@@ -920,7 +930,14 @@ function findFree(ids,prefAngle){
 }
 function moveToFree(ids,prefAngle){const d=findFree(ids,prefAngle);ids.forEach(id=>{const p=byId(id);if(p){p.x+=d.dx;p.y+=d.dy;}});return d;}
 function nudgeFree(p){moveToFree([p.id],0);}
-function deletePiece(id){pushHistory();S.pieces=S.pieces.filter(p=>p.id!==id);S.arrows=S.arrows.filter(a=>a.from!==id&&a.to!==id);sel=null;commit();}
+function deletePiece(id){
+  const p=byId(id); if(!p) return;
+  if(BASE_IDS.has(id)){toast('Les cartes du kit ne se suppriment pas. Range-la à l’écart ; la Bibliothèque la retrouve en un clic.');return;}
+  pushHistory();
+  putInTrash(p);
+  S.pieces=S.pieces.filter(x=>x.id!==id);S.arrows=S.arrows.filter(a=>a.from!==id&&a.to!==id);sel=null;commit();
+  toast('Carte mise à la corbeille. La Bibliothèque permet de la remettre.',true);
+}
 function duplicatePiece(id){
   const p=byId(id); if(!p) return; pushHistory();
   const c=clone(p); c.id=uid('u'); c.h=c.h0||c.h; c.w=c.w0||c.w; c.x=p.x+p.w+260; nudgeFree(c); S.pieces.push(c); sel={type:'piece',id:c.id}; commit();
@@ -947,7 +964,7 @@ function renderSelbar(){
     const inGroup=groupOf(p.id).size>1;
     bar.innerHTML=`<span class="what">${p.num?esc(p.num)+' · ':''}<b>${esc(p.title)}</b></span>
       <button class="btn" data-act="edit">Modifier</button><button class="btn" data-act="dup">Dupliquer</button>
-      ${inGroup?'<button class="btn" data-act="detach">Détacher</button>':''}<button class="btn" data-act="del">Supprimer</button>`;
+      ${inGroup?'<button class="btn" data-act="detach">Détacher</button>':''}${BASE_IDS.has(p.id)?'':'<button class="btn" data-act="del">Supprimer</button>'}`;
   }else{
     const a=S.arrows.find(x=>x.id===sel.id); if(!a){bar.hidden=true;return;}
     bar.innerHTML=Object.entries(KW).map(([k,v])=>`<button class="chip${a.kw===k?' on':''}" data-kw="${k}"><i style="background:${v.line}"></i>${v.word}</button>`).join('')+
@@ -1299,12 +1316,13 @@ vp.addEventListener('contextmenu',e=>{
       {label:'Dupliquer',k:MOD+'D',run:()=>duplicatePiece(pid)},
       ...(inGroup?[{label:'Détacher du groupe',k:'⌥ glisser',run:()=>detachPiece(pid)}]:[]),
       {label:'Relier à une autre carte',k:'L',run:()=>startLinkFrom(pid)},'-',
-      {label:'Supprimer',k:'⌫',danger:1,run:()=>deletePiece(pid)}]);
+      ...(BASE_IDS.has(pid)?[{label:'Ranger à l’écart',run:()=>{pushHistory();moveToFree([pid],Math.PI/2);const q=byId(pid);q.y+=400;moveToFree([pid],Math.PI/2);commit();}}]:[{label:'Mettre à la corbeille',k:'⌫',danger:1,run:()=>deletePiece(pid)}])]);
     return;
   }
   ctxPlace=wpos;
   openCtx(e.clientX,e.clientY,[
     {label:'Nouvelle pièce ici',k:'N',run:()=>openEditor(null)},
+    {label:'Bibliothèque des cartes',k:'B',run:openLibrary},
     {label:tool==='link'?'Revenir à Déplacer':'Outil plume',k:tool==='link'?'V':'P',run:()=>setTool(tool==='link'?'move':'link')},'-',
     {label:'Ajuster la vue',k:'0',run:fitView},
     {label:'Zoomer',k:MOD+'+',run:()=>{userView=true;zoomAt(e.clientX,e.clientY,1.25);}},
@@ -1336,6 +1354,7 @@ window.addEventListener('keydown',e=>{
   else if(k==='v') setTool('move');
   else if(k==='l'||k==='p') setTool(tool==='link'?'move':'link');
   else if(k==='n') openEditor(null);
+  else if(k==='b') openLibrary();
   else if(e.key==='Enter'&&sel&&sel.type==='piece') openEditor(sel.id);
   else if(e.key==='+'||e.key==='=') zoomAt(innerWidth/2,innerHeight/2,1.25);
   else if(e.key==='-') zoomAt(innerWidth/2,innerHeight/2,.8);
@@ -1361,6 +1380,7 @@ $('bHelp').onclick=openIntro;
 $('bData').onclick=openData;
 $('bShare').onclick=openShare;
 $('bSave').onclick=openSaves;
+$('bLib').onclick=openLibrary;
 $('bSettings').onclick=openSettings;
 if(window.PUZZLE_ONLINE){$('bShare').hidden=false;$('bData').hidden=true;}
 window.addEventListener('resize',()=>{closePop();if(!userView)fitView();if(editor&&$('edCard')){readEd();renderEdCard(false);}});
@@ -1521,7 +1541,19 @@ function openIntro(){
 }
 
 /* ---------- Versions enregistrées et version de référence ---------- */
-let SAVES=[], REF=null;
+let SAVES=[], REF=null, TRASH=[];
+const LS_TRASH='puzzle-manager-corbeille';
+function putInTrash(p){
+  const item={...pieceData(p),id:p.id,at:new Date().toISOString(),by:me?me.name:''};
+  TRASH=[item,...TRASH.filter(t=>t.id!==p.id)].slice(0,40);
+  if(sync.db&&sync.ready) sync.db.doc('board/trash').set({items:TRASH}).catch(()=>{});
+  else writeLocal(LS_TRASH,TRASH);
+}
+function takeFromTrash(id){
+  TRASH=TRASH.filter(t=>t.id!==id);
+  if(sync.db&&sync.ready) sync.db.doc('board/trash').set({items:TRASH}).catch(()=>{});
+  else writeLocal(LS_TRASH,TRASH);
+}
 const LS_SAVES='puzzle-manager-versions', LS_REF='puzzle-manager-reference';
 /* un plateau compact : les cartes du kit ne gardent que leur place, les cartes créées gardent tout */
 function packBoard(){
@@ -1568,6 +1600,7 @@ function listenVersions(db){
     SAVES=snap.docs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()})).filter(v=>v&&v.data).sort((a,b)=>String(b.at).localeCompare(String(a.at)));
     if(!$('modal').hidden&&$('verList')) renderVersionList();
   },()=>{});
+  db.doc('board/trash').onSnapshot(d=>{const v=d.exists&&d.data();TRASH=(v&&Array.isArray(v.items)?v.items:[]).filter(t=>t&&typeof t.id==='string'&&/^[A-Za-z0-9_.~:@+-]{1,80}$/.test(t.id)).slice(0,40);if($('libBody'))renderLibrary();},()=>{});
   db.doc('board/reference').onSnapshot(d=>{REF=d.exists&&d.data()&&d.data().data?d.data():null;updateProgress();if($('refState'))renderSettingsRef();},()=>{});
 }
 function openSaves(){
@@ -1595,6 +1628,51 @@ function renderVersionList(){
   box.onclick=async e=>{const o=e.target.closest('[data-open]'),d=e.target.closest('[data-del]');
     if(o){const v=SAVES.find(x=>x.id===o.dataset.open);if(v){closeModal();restoreVersion(v);}}
     if(d){if(d.dataset.sure!=='1'){d.dataset.sure='1';d.textContent='Confirmer';return;}try{await deleteVersion(d.dataset.del);}catch(_){}renderVersionList();}};
+}
+function openLibrary(){
+  openModal(`<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lbT" style="max-width:820px"><div class="data">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h2 id="lbT" style="margin-right:auto">Bibliothèque</h2><span id="libAll"></span><button class="btn" id="lbClose">Fermer</button></div>
+    <div class="hint">Toutes les cartes du jeu. Clique sur une carte présente pour aller la voir, sur une carte absente pour la remettre sur le plateau.</div>
+    <div id="libBody" style="display:flex;flex-direction:column;gap:16px"></div>
+  </div></div>`);
+  $('lbClose').onclick=closeModal;
+  renderLibrary();
+}
+function libCard(p,state){
+  const st=state==='in'?'Sur le plateau':state==='trash'?'Remettre':'Absente · remettre';
+  return `<button class="lib-card${state==='in'?'':' out'}" data-lib="${esc(p.id)}" data-st="${state}" style="background:${p.color};color:${fgOf(p.color)}"><span class="n">${esc(p.num||'·')}</span><span class="t">${esc(p.title||'Sans titre')}</span><span class="s">${st}</span></button>`;
+}
+function renderLibrary(){
+  const box=$('libBody'); if(!box) return;
+  const kitIn=BASE.filter(b=>byId(b.id)).length, missing=BASE.length-kitIn;
+  const custom=S.pieces.filter(p=>!BASE_IDS.has(p.id)), trash=TRASH.filter(t=>!byId(t.id));
+  const sec=(t,html)=>`<div style="display:flex;flex-direction:column;gap:8px"><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55">${t}</div>${html}</div>`;
+  box.innerHTML=sec(`Cartes du kit · ${kitIn} / ${BASE.length} sur le plateau`,`<div class="lib-grid">${BASE.map(b=>libCard(byId(b.id)||b,byId(b.id)?'in':'out')).join('')}</div>`)+
+    (custom.length?sec(`Cartes créées · ${custom.length}`,`<div class="lib-grid">${custom.map(p=>libCard(p,'in')).join('')}</div>`):'')+
+    sec(`Corbeille · ${trash.length}`,trash.length?`<div class="lib-grid">${trash.map(t=>libCard(t,'trash')).join('')}</div>`:'<div class="hint">Vide. Une carte créée puis supprimée arrive ici, et peut être remise.</div>');
+  $('libAll').innerHTML=missing?`<button class="btn wine" id="libRestoreAll">${missing>1?`Remettre les ${missing} cartes absentes`:'Remettre la carte absente'}</button>`:'';
+  if($('libRestoreAll')) $('libRestoreAll').onclick=()=>{restoreCards(BASE.filter(b=>!byId(b.id)).map(b=>clone(b)));renderLibrary();};
+  box.onclick=e=>{
+    const b=e.target.closest('[data-lib]'); if(!b) return;
+    const id=b.dataset.lib, st=b.dataset.st;
+    if(st==='in'){closeModal();focusPiece(id);return;}
+    if(st==='out'){const k=BASE.find(x=>x.id===id);if(k)restoreCards([clone(k)]);renderLibrary();return;}
+    if(st==='trash'){const t=TRASH.find(x=>x.id===id);if(t){restoreCards([cleanPiece(t.id,t)]);takeFromTrash(id);}renderLibrary();}
+  };
+}
+/* remet des cartes au centre de la vue, sur une place libre */
+function restoreCards(list){
+  if(!list.length) return;
+  pushHistory();
+  const c=toWorld(innerWidth/2,innerHeight/2);
+  list.forEach((p,i)=>{p.h=p.h0||p.h;p.w=p.w0||p.w;p.x=Math.round(c.x-p.w/2+(i%6)*560);p.y=Math.round(c.y-p.h/2+Math.floor(i/6)*640);S.pieces.push(p);moveToFree([p.id],0);});
+  sel=list.length===1?{type:'piece',id:list[0].id}:null; commit();
+  toast(list.length>1?`${list.length} cartes remises sur le plateau.`:`« ${list[0].title} » remise sur le plateau.`,true);
+}
+function focusPiece(id){
+  const p=byId(id); if(!p) return;
+  userView=true; const s=Math.max(view.s,.35); const cx=p.x+p.w/2, cy=p.y+p.h/2;
+  view={s,tx:innerWidth/2-cx*s,ty:innerHeight/2-cy*s}; applyView(); select({type:'piece',id});
 }
 function openSettings(){
   const missing=BASE.filter(b=>!byId(b.id)).length;
@@ -1941,7 +2019,7 @@ function start(data){
   renderAll();
   if(data&&data.view){view=data.view;applyView();}else fitView();
   if(!me) openIntro();
-  SAVES=readLocal(LS_SAVES,[]); REF=readLocal(LS_REF,null); updateProgress();
+  SAVES=readLocal(LS_SAVES,[]); REF=readLocal(LS_REF,null); TRASH=readLocal(LS_TRASH,[]); updateProgress();
   initCollab();
 }
 try{window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({S:JSON.parse(snapshot()),view}));}catch(_){}
