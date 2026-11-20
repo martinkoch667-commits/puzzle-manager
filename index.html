@@ -364,6 +364,7 @@ button{font:inherit;color:inherit}
 <div class="panel" id="topr">
   <div id="people" aria-label="Personnes sur le plateau"></div>
   <button class="btn desk" id="bSave" title="Enregistrer une version du plateau">Enregistrer</button>
+  <button class="btn desk" id="bExport" title="Exporter la fresque en PDF A1 prêt à imprimer">Exporter</button>
   <span class="sep desk"></span>
   <button class="btn hist" id="bUndo" title="Annuler (⌘Z)" aria-label="Annuler"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
   <button class="btn hist" id="bRedo" title="Rétablir (⌘⇧Z)" aria-label="Rétablir"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
@@ -1554,6 +1555,7 @@ $('bShare').onclick=openShare;
 $('bSave').onclick=openSaves;
 $('bLib').onclick=openLibrary;
 $('bSettings').onclick=openSettings;
+$('bExport').onclick=openExport;
 $('bMore').onclick=openMenu;
 /* ---------- Menu du logo : le jeu, le manifeste, la métaphore, les sources ---------- */
 const INFO={
@@ -1646,6 +1648,7 @@ function openMenu(){
     window.PUZZLE_ONLINE?{l:'Partager le plateau',wine:1,ic:I('<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>'),run:openShare}
       :{l:'Sauvegarde du plateau',ic:I('<path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4"/>'),run:openData},
     '-',
+    {l:'Exporter la fresque (PDF A1)',ic:I('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),run:openExport},
     {l:'Vérifier ma carte',ic:I('<path d="M4 12.5l5 5L20 6.5"/>'),run:doVerify},
     {l:'Mélanger les pièces',ic:I('<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>'),run:doShuffle},
     {l:'Voir la solution',ic:I('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),run:doSolution},
@@ -1852,6 +1855,230 @@ function openShare(){
   $('shCopy').onclick=()=>{const i=$('shLink');try{navigator.clipboard.writeText(i.value).then(()=>{$('shMsg').textContent='Lien copié. Colle-le dans le groupe de la classe.';},()=>{i.select();$('shMsg').textContent='Lien sélectionné : fais Cmd+C.';});}catch(_){i.select();$('shMsg').textContent='Lien sélectionné : fais Cmd+C.';}};
   $('shNew').onsubmit=e=>{e.preventDefault();const n=$('shName').value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40);if(!n){$('shName').focus();return;}location.href=boardLink(n);};
 }
+
+/* ---------- Export de la fresque : PDF A1 vectoriel, couleurs CMJN (Coated FOGRA39), posé sur le gabarit ---------- */
+const FRESQUE=(()=>{
+  /* couleurs du jeu converties une fois pour toutes avec le profil Coated FOGRA39 (intention colorimétrique relative) ; le noir du texte part en 100 % noir */
+  const CMYK={"0E4E6D":[1.0,0.64,0.356,0.243],"111111":[0,0,0,1],"3C3908":[0.673,0.566,0.888,0.683],"480624":[0.576,0.921,0.448,0.803],"6E6915":[0.547,0.414,1.0,0.334],"792D0D":[0.33,0.866,1.0,0.48],"81CFF4":[0.512,0.0,0.0,0.0],"880B6D":[0.567,1.0,0.168,0.106],"9E960A":[0.411,0.285,1.0,0.122],"9F0049":[0.243,1.0,0.412,0.259],"B1E6FF":[0.34,0.0,0.0,0.0],"C1BABA":[0.277,0.241,0.231,0.035],"C5ECFF":[0.269,0.0,0.0,0.0],"CCC20E":[0.268,0.132,1.0,0.016],"D3F1FF":[0.204,0.0,0.003,0.0],"EBF9FF":[0.1,0.0,0.005,0.0],"F3EA5B":[0.101,0.0,0.73,0.0],"FB75DE":[0.188,0.618,0.0,0.0],"FBC4EF":[0.055,0.306,0.0,0.0],"FC5912":[0.0,0.762,0.982,0.0],"FE8D5D":[0.0,0.563,0.644,0.0],"FEFAB0":[0.037,0.0,0.397,0.0],"FF8801":[0.0,0.563,0.997,0.0],"FF9BE9":[0.112,0.483,0.0,0.0],"FFB18F":[0.0,0.401,0.433,0.0],"FFD9C9":[0.0,0.206,0.2,0.0],"FFE5F9":[0.007,0.148,0.0,0.0],"FFFFFF":[0.0,0.0,0.0,0.0]};
+  const FM={"400":{"w":[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,0,556,0,222,0,333,1000,0,0,333,0,0,333,1000,0,0,0,0,222,222,333,333,350,556,1000,333,1000,0,333,944,0,0,0,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,552,400,549,333,333,333,576,537,333,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,549,611,556,556,556,556,500,556,500],"bbox":[-375,-212,1000,896],"asc":905,"desc":-212,"cap":688},"500":{"w":[278,296,395,556,556,889,686,207,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,296,296,584,584,584,574,1002,686,686,722,722,667,611,778,722,278,519,686,574,833,722,778,667,778,722,667,611,722,667,944,667,667,611,296,278,296,507,556,333,556,574,519,574,556,296,574,574,241,241,519,241,852,574,574,574,574,352,519,296,574,519,741,519,519,500,353,267,353,584,0,556,0,241,0,389,1000,0,0,333,0,0,333,1000,0,0,0,0,241,241,389,389,350,556,1000,333,1000,0,333,944,0,0,0,278,333,556,556,556,556,267,556,333,737,370,556,584,333,737,552,400,549,333,333,333,584,543,333,333,333,365,556,834,834,834,611,686,686,686,686,686,686,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,519,556,556,556,556,278,278,278,278,574,574,574,574,574,574,574,549,611,574,574,574,574,519,574,519],"bbox":[-273,-215,1000,896],"asc":905,"desc":-212,"cap":688},"700":{"w":[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,0,556,0,278,0,500,1000,0,0,333,0,0,333,1000,0,0,0,0,278,278,500,500,350,556,1000,333,1000,0,333,944,0,0,0,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,552,400,549,333,333,333,600,556,333,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,549,611,611,611,611,611,556,611,556],"bbox":[-454,-222,1000,905],"asc":905,"desc":-212,"cap":688}};
+  const PT=0.24, A1W=1683.78, A1H=2383.94, ASC=1854/2048;
+  const f=v=>String(+(+v).toFixed(3));
+  const hexOf=c=>{c=String(c||'').trim().toLowerCase();if(c==='white')return 'FFFFFF';if(c==='black')return '000000';
+    if(c[0]==='#'){if(c.length===4)c='#'+c[1]+c[1]+c[2]+c[2]+c[3]+c[3];return c.slice(1,7).toUpperCase();}
+    const m=c.match(/rgba?\(([^)]+)\)/);if(m){const v=m[1].split(/[\s,\/]+/).filter(Boolean).map(Number);return v.slice(0,3).map(x=>Math.round(x).toString(16).padStart(2,'0')).join('').toUpperCase();}return null;};
+  function cmyk(c){const h=hexOf(c);if(!h)return [0,0,0,1];if(CMYK[h])return CMYK[h];
+    const r=parseInt(h.slice(0,2),16)/255,g=parseInt(h.slice(2,4),16)/255,b=parseInt(h.slice(4,6),16)/255;
+    if(Math.abs(r-g)<.01&&Math.abs(g-b)<.01)return [0,0,0,1-r];
+    const k=1-Math.max(r,g,b);return k>=1?[0,0,0,1]:[(1-r-k)/(1-k),(1-g-k)/(1-k),(1-b-k)/(1-k),k];}
+  const mix=(a,b,t)=>a.map((v,i)=>v*t+b[i]*(1-t));
+  const fillC=c=>c.map(f).join(' ')+' k', strokeC=c=>c.map(f).join(' ')+' K';
+  /* chemin SVG vers opérateurs PDF (M L H V C S Q T A Z, absolus et relatifs ; les arcs deviennent des courbes) */
+  function walkPath(d,cb){
+    const t=d.match(/[a-zA-Z]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g)||[];
+    let i=0,cmd='',x=0,y=0,sx=0,sy=0,cx=null,cy=null,qx=null,qy=null;
+    const N=()=>parseFloat(t[i++]), isC=s=>/[a-zA-Z]/.test(s);
+    while(i<t.length){
+      if(isC(t[i]))cmd=t[i++]; else if(!cmd)break;
+      const rel=cmd!==cmd.toUpperCase(),C=cmd.toUpperCase();
+      if(C==='Z'){cb('h');x=sx;y=sy;cx=qx=null;if(i<t.length&&!isC(t[i]))break;continue;}
+      if(i>=t.length)break;
+      if(C==='M'){let X=N(),Y=N();if(rel){X+=x;Y+=y;}cb('m',X,Y);x=sx=X;y=sy=Y;cmd=rel?'l':'L';cx=qx=null;continue;}
+      if(C==='L'){let X=N(),Y=N();if(rel){X+=x;Y+=y;}cb('l',X,Y);x=X;y=Y;cx=qx=null;continue;}
+      if(C==='H'){let X=N();if(rel)X+=x;cb('l',X,y);x=X;cx=qx=null;continue;}
+      if(C==='V'){let Y=N();if(rel)Y+=y;cb('l',x,Y);y=Y;cx=qx=null;continue;}
+      if(C==='C'){const a=[N(),N(),N(),N(),N(),N()];if(rel)for(let j=0;j<6;j+=2){a[j]+=x;a[j+1]+=y;}cb('c',...a);cx=a[2];cy=a[3];x=a[4];y=a[5];qx=null;continue;}
+      if(C==='S'){const a=[N(),N(),N(),N()];if(rel){a[0]+=x;a[1]+=y;a[2]+=x;a[3]+=y;}const x1=cx==null?x:2*x-cx,y1=cy==null?y:2*y-cy;cb('c',x1,y1,...a);cx=a[0];cy=a[1];x=a[2];y=a[3];qx=null;continue;}
+      if(C==='Q'||C==='T'){let q1,q2,X,Y;if(C==='Q'){q1=N();q2=N();if(rel){q1+=x;q2+=y;}}else{q1=qx==null?x:2*x-qx;q2=qy==null?y:2*y-qy;}X=N();Y=N();if(rel){X+=x;Y+=y;}
+        cb('c',x+2/3*(q1-x),y+2/3*(q2-y),X+2/3*(q1-X),Y+2/3*(q2-Y),X,Y);qx=q1;qy=q2;cx=null;x=X;y=Y;continue;}
+      if(C==='A'){let rx=N(),ry=N(),ph=N(),fa=N(),fs=N(),X=N(),Y=N();if(rel){X+=x;Y+=y;}arc(x,y,rx,ry,ph,fa,fs,X,Y,(...a)=>cb('c',...a));x=X;y=Y;cx=qx=null;continue;}
+      break;
+    }
+  }
+  function arc(x1,y1,rx,ry,phi,fa,fs,x2,y2,cu){
+    if(x1===x2&&y1===y2)return; rx=Math.abs(rx);ry=Math.abs(ry); if(!rx||!ry){cu(x1,y1,x2,y2,x2,y2);return;}
+    const r=phi*Math.PI/180,cs=Math.cos(r),sn=Math.sin(r),dx=(x1-x2)/2,dy=(y1-y2)/2,xp=cs*dx+sn*dy,yp=-sn*dx+cs*dy;
+    const lam=xp*xp/(rx*rx)+yp*yp/(ry*ry);if(lam>1){const s=Math.sqrt(lam);rx*=s;ry*=s;}
+    const nu=rx*rx*ry*ry-rx*rx*yp*yp-ry*ry*xp*xp,de=rx*rx*yp*yp+ry*ry*xp*xp,co=(fa===fs?-1:1)*Math.sqrt(Math.max(0,nu/de));
+    const cxp=co*rx*yp/ry,cyp=-co*ry*xp/rx,ccx=cs*cxp-sn*cyp+(x1+x2)/2,ccy=sn*cxp+cs*cyp+(y1+y2)/2;
+    const ang=(ux,uy,vx,vy)=>Math.atan2(ux*vy-uy*vx,ux*vx+uy*vy);
+    const t1=ang(1,0,(xp-cxp)/rx,(yp-cyp)/ry);let dt=ang((xp-cxp)/rx,(yp-cyp)/ry,(-xp-cxp)/rx,(-yp-cyp)/ry);
+    if(!fs&&dt>0)dt-=2*Math.PI;else if(fs&&dt<0)dt+=2*Math.PI;
+    const n=Math.max(1,Math.ceil(Math.abs(dt)/(Math.PI/2)-1e-9)),st=dt/n,kk=4/3*Math.tan(st/4);
+    const P=a=>[ccx+rx*Math.cos(a)*cs-ry*Math.sin(a)*sn,ccy+rx*Math.cos(a)*sn+ry*Math.sin(a)*cs];
+    const D=a=>[-rx*Math.sin(a)*cs-ry*Math.cos(a)*sn,-rx*Math.sin(a)*sn+ry*Math.cos(a)*cs];
+    for(let i=0;i<n;i++){const a1=t1+i*st,a2=a1+st,p1=P(a1),p2=P(a2),d1=D(a1),d2=D(a2);cu(p1[0]+kk*d1[0],p1[1]+kk*d1[1],p2[0]-kk*d2[0],p2[1]-kk*d2[1],p2[0],p2[1]);}
+  }
+  function pathOps(d){const o=[];walkPath(d,(op,...a)=>o.push(op==='h'?'h':a.map(f).join(' ')+' '+op));return o.join('\n');}
+  function pathBox(d){let b=[Infinity,Infinity,-Infinity,-Infinity];walkPath(d,(op,...a)=>{for(let i=0;i+1<a.length;i+=2){b[0]=Math.min(b[0],a[i]);b[1]=Math.min(b[1],a[i+1]);b[2]=Math.max(b[2],a[i]);b[3]=Math.max(b[3],a[i+1]);}});return b;}
+  const circleD=(cx,cy,r)=>`M${cx-r} ${cy}A${r} ${r} 0 1 0 ${cx+r} ${cy}A${r} ${r} 0 1 0 ${cx-r} ${cy}Z`;
+  const rrectD=(x,y,w,h,rx,ry)=>{rx=Math.min(rx||ry||0,w/2);ry=Math.min(ry||rx,h/2);if(!rx)return `M${x} ${y}H${x+w}V${y+h}H${x}Z`;
+    return `M${x+rx} ${y}H${x+w-rx}A${rx} ${ry} 0 0 1 ${x+w} ${y+ry}V${y+h-ry}A${rx} ${ry} 0 0 1 ${x+w-rx} ${y+h}H${x+rx}A${rx} ${ry} 0 0 1 ${x} ${y+h-ry}V${y+ry}A${rx} ${ry} 0 0 1 ${x+rx} ${y}Z`;};
+  /* texte : WinAnsi, polices TrueType incluses dans le fichier */
+  const W1252={0x20AC:128,0x201A:130,0x201E:132,0x2026:133,0x2020:134,0x2021:135,0x02C6:136,0x2030:137,0x2039:139,0x0152:140,0x2018:145,0x2019:146,0x201C:147,0x201D:148,0x2022:149,0x2013:150,0x2014:151,0x02DC:152,0x2122:153,0x203A:155,0x0153:156,0x0178:159,0x202F:160,0x2009:32,0x2011:45,0x2010:45,0x2212:45};
+  const pdfStr=s=>{let o='(';for(const ch of s){let c=ch.codePointAt(0);if(c>=256||(c>=128&&c<160))c=W1252[c];if(c==null||c<32)continue;
+    if(c===40||c===41||c===92)o+='\\'+String.fromCharCode(c);else if(c>126)o+='\\'+c.toString(8).padStart(3,'0');else o+=String.fromCharCode(c);}return o+')';};
+  const FK=w=>w>=650?'700':w>=450?'500':'400';
+  /* les mots tels que le navigateur les a posés : chaque mot garde sa place exacte */
+  function textRuns(root,stop){
+    const out=[],tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),rg=document.createRange();
+    for(let t=tw.nextNode();t;t=tw.nextNode()){
+      if(!t.data.trim())continue; const el=t.parentElement, cs=getComputedStyle(el);
+      if(cs.visibility==='hidden'||cs.display==='none')continue;
+      let op=1;for(let n=el;n&&n!==stop;n=n.parentElement)op*=+getComputedStyle(n).opacity;
+      const fs=parseFloat(cs.fontSize),wk=FK(+cs.fontWeight||400),ls=cs.letterSpacing==='normal'?0:parseFloat(cs.letterSpacing)||0,up=cs.textTransform==='uppercase';
+      const re=/\S+/g;let m;
+      while((m=re.exec(t.data))){
+        rg.setStart(t,m.index);rg.setEnd(t,m.index+m[0].length);const rs=[...rg.getClientRects()].filter(r=>r.width>0);
+        const push=(s,r)=>out.push({s:up?s.toLocaleUpperCase('fr-FR'):s,x:r.left,y:r.top+ASC*fs,fs,wk,ls,color:cs.color,op});
+        if(rs.length<=1){if(rs[0])push(m[0],rs[0]);continue;}
+        let seg='',r0=null;
+        for(let j=0;j<m[0].length;j++){rg.setStart(t,m.index+j);rg.setEnd(t,m.index+j+1);const r=rg.getClientRects()[0];if(!r)continue;
+          if(r0&&Math.abs(r.top-r0.top)>fs*.3){push(seg,r0);seg='';r0=null;}if(!r0)r0=r;seg+=m[0][j];}
+        if(seg)push(seg,r0);
+      }
+    }
+    return out;
+  }
+  const runOps=(rs,bg)=>rs.map(r=>{const c=r.op<1?mix(cmyk(r.color),bg,r.op):cmyk(r.color);
+    return `${fillC(c)}\nBT /F${r.wk} 1 Tf ${f(r.ls/r.fs)} Tc ${f(r.fs)} 0 0 ${f(-r.fs)} ${f(r.x)} ${f(r.y)} Tm ${pdfStr(r.s)} Tj ET`;}).join('\n');
+  /* ---------- la fresque, lue dans le plateau tel qu'il est dessiné ---------- */
+  function capture(withLoose){
+    const contacts=computeContacts(S.pieces), linked=new Set();
+    contacts.forEach(c=>{linked.add(c.a);linked.add(c.b);});S.arrows.forEach(a=>{linked.add(a.from);linked.add(a.to);});
+    const keep=p=>withLoose||!linked.size||linked.has(p.id);
+    const world=$('world'),old=world.style.transform;world.style.transform='none';
+    try{
+      const o=world.getBoundingClientRect(),X=v=>v-o.left,Y=v=>v-o.top;
+      let box=[Infinity,Infinity,-Infinity,-Infinity];const grow=(x1,y1,x2,y2)=>{box=[Math.min(box[0],x1),Math.min(box[1],y1),Math.max(box[2],x2),Math.max(box[3],y2)];};
+      const ops=[];
+      /* 1. les flèches, sous les cartes comme à l'écran */
+      $('Larrows').querySelectorAll(':scope > g').forEach(g=>{
+        const dp=g.querySelector('path[stroke-dasharray]');if(!dp)return;
+        const col=cmyk(dp.getAttribute('stroke')),d=dp.getAttribute('d'),dash=(dp.getAttribute('stroke-dasharray')||'').split(/[\s,]+/).map(Number).filter(v=>v>0),tot=dash.reduce((a,b)=>a+b,0);
+        const off=tot?((-(+dp.getAttribute('stroke-dashoffset')||0))%tot+tot)%tot:0;
+        ops.push(`q ${strokeC(col)} ${f(+dp.getAttribute('stroke-width')||8)} w ${dash.length?'['+dash.map(f).join(' ')+'] '+f(off)+' d':''}\n${pathOps(d)}\nS Q`);
+        const b=pathBox(d);grow(b[0]-40,b[1]-40,b[2]+40,b[3]+40);
+        g.querySelectorAll('circle').forEach(c=>{const cx=+c.getAttribute('cx'),cy=+c.getAttribute('cy'),r=+c.getAttribute('r');ops.push(`${fillC(cmyk(c.getAttribute('fill')))}\n${pathOps(circleD(cx,cy,r))}\nf`);grow(cx-r,cy-r,cx+r,cy+r);});
+        const T=g.querySelector('text');if(T&&T.getNumberOfChars){
+          const fs=+T.getAttribute('font-size')||36,txt=T.textContent,c=cmyk(T.getAttribute('fill'));let s=fillC(c)+'\nBT /F400 1 Tf';
+          for(let i=0;i<T.getNumberOfChars();i++){const ch=txt[i];if(!ch||!ch.trim())continue;let p,a;try{p=T.getStartPositionOfChar(i);a=T.getRotationOfChar(i)*Math.PI/180;}catch(_){continue;}
+            const cs=Math.cos(a),sn=Math.sin(a);s+=`\n${f(fs*cs)} ${f(fs*sn)} ${f(fs*sn)} ${f(-fs*cs)} ${f(p.x)} ${f(p.y)} Tm ${pdfStr(ch)} Tj`;grow(p.x-fs,p.y-fs,p.x+fs,p.y+fs);}
+          ops.push(s+' ET');}
+      });
+      /* 2. les cartes, dans l'ordre du plateau, avec leur texte */
+      S.pieces.filter(keep).forEach(p=>{
+        const el=els.get(p.id);if(!el||!el._path)return;const bg=cmyk(p.color);
+        ops.push(`q 1 0 0 1 ${f(p.x)} ${f(p.y)} cm ${fillC(bg)}\n${pathOps(el._path.getAttribute('d'))}\nf Q`);
+        grow(p.x-R,p.y-R,p.x+p.w+R,p.y+p.h+R);
+        const c=el.querySelector('.c');if(!c)return;
+        c.querySelectorAll('.rule').forEach(ru=>{const r=ru.getBoundingClientRect(),cs=getComputedStyle(ru);
+          ops.push(`${fillC(mix(cmyk(cs.backgroundColor),bg,+cs.opacity))}\n${f(X(r.left))} ${f(Y(r.top))} ${f(r.width)} ${f(r.height)} re f`);});
+        ops.push(runOps(textRuns(c,el).map(r=>({...r,x:X(r.x),y:Y(r.y)})),bg));
+      });
+      /* 3. les pastilles EXIGE / PERMET / S'OPPOSE */
+      $('Lbadges').querySelectorAll('.badge:not(.vide)').forEach(b=>{
+        const r=b.getBoundingClientRect(),cx=X(r.left+r.width/2),cy=Y(r.top+r.height/2),rad=r.width/2;
+        ops.push(`${fillC(cmyk(getComputedStyle(b).backgroundColor))}\n${pathOps(circleD(cx,cy,rad))}\nf`);
+        ops.push(runOps(textRuns(b,b.parentElement).map(q=>({...q,x:X(q.x),y:Y(q.y)})),[0,0,0,0]));
+      });
+      return {ops:ops.join('\n'),box};
+    }finally{world.style.transform=old;}
+  }
+  /* ---------- le gabarit : dessiné tel quel, la fresque dans son cadre, le QR du plateau à sa place ---------- */
+  function template(svgText,link,fres){
+    const doc=new DOMParser().parseFromString(svgText,'image/svg+xml'),root=doc.documentElement;
+    const vb=(root.getAttribute('viewBox')||'0 0 7016 9933').split(/[\s,]+/).map(Number);
+    const ops=[`q ${f(vb[0])} ${f(vb[1])} ${f(vb[2])} ${f(vb[3])} re W n`];let frame=null;
+    const paint=(el,st,d)=>{const fl=el.getAttribute('fill')||st.fill,sk=el.getAttribute('stroke')||st.stroke,sw=+(el.getAttribute('stroke-width')||st.sw);
+      const F=fl&&fl!=='none',K=sk&&sk!=='none';if(!F&&!K)return;
+      ops.push(`q ${st.m!=='1 0 0 1 0 0'?st.m+' cm ':''}${F?fillC(cmyk(fl))+' ':''}${K?strokeC(cmyk(sk))+' '+f(sw)+' w':''}\n${pathOps(d)}\n${F&&K?'B':F?'f':'S'} Q`);};
+    const walk=(node,st)=>{for(const el of node.children){const tag=el.tagName.toLowerCase();if(tag==='defs'||tag==='clippath')continue;
+      const s={fill:el.getAttribute('fill')||st.fill,stroke:el.getAttribute('stroke')||st.stroke,sw:el.getAttribute('stroke-width')||st.sw,m:st.m};
+      const tr=(el.getAttribute('transform')||'').match(/translate\(\s*([-\d.e]+)[\s,]*([-\d.e]*)\s*\)/);if(tr)s.m=`1 0 0 1 ${f(+tr[1])} ${f(+tr[2]||0)}`;
+      if(tag==='g'){walk(el,s);continue;}
+      if(tag==='rect'){const x=+el.getAttribute('x')||0,y=+el.getAttribute('y')||0,w=+el.getAttribute('width'),h=+el.getAttribute('height');
+        if(el.getAttribute('stroke')&&(el.getAttribute('fill')||s.fill)==='none'&&w>vb[2]*.5){frame={x,y,w,h};paint(el,s,rrectD(x,y,w,h,0,0));ops.push(fres(frame));frame.done=1;continue;}
+        paint(el,s,rrectD(x,y,w,h,+el.getAttribute('rx')||0,+el.getAttribute('ry')||0));continue;}
+      if(tag==='circle'){paint(el,s,circleD(+el.getAttribute('cx'),+el.getAttribute('cy'),+el.getAttribute('r')));continue;}
+      if(tag==='ellipse'){const cx=+el.getAttribute('cx'),cy=+el.getAttribute('cy'),rx=+el.getAttribute('rx'),ry=+el.getAttribute('ry');paint(el,s,`M${cx-rx} ${cy}A${rx} ${ry} 0 1 0 ${cx+rx} ${cy}A${rx} ${ry} 0 1 0 ${cx-rx} ${cy}Z`);continue;}
+      if(tag==='path'){const d=el.getAttribute('d')||'';
+        if((d.match(/M/g)||[]).length>150){const b=pathBox(d);if(Math.abs((b[2]-b[0])-(b[3]-b[1]))<(b[2]-b[0])*.03){ops.push(qrOps(link,b,el.getAttribute('fill')||s.fill));continue;}}
+        paint(el,s,d);}
+    }};
+    walk(root,{fill:root.getAttribute('fill')||'black',stroke:root.getAttribute('stroke')||'none',sw:root.getAttribute('stroke-width')||1,m:'1 0 0 1 0 0'});
+    if(!frame){frame={x:vb[0]+vb[2]*.05,y:vb[1]+vb[3]*.2,w:vb[2]*.9,h:vb[3]*.75};ops.push(fres(frame));}
+    ops.push('Q');return ops.join('\n');
+  }
+  function qrOps(link,b,fill){
+    const q=QR.make(link);if(!q)return '';const n=q.size,m=(b[2]-b[0])/n;let s=fillC(cmyk(fill))+'\n';
+    for(let y=0;y<n;y++){let x=0;while(x<n){if(q.M[y][x]){let e=x;while(e<n&&q.M[y][e])e++;s+=`${f(b[0]+x*m)} ${f(b[1]+y*m)} ${f((e-x)*m)} ${f(m)} re\n`;x=e;}else x++;}}
+    return s+'f';
+  }
+  /* ---------- écriture du PDF ---------- */
+  const bytes=s=>{const b=new Uint8Array(s.length);for(let i=0;i<s.length;i++)b[i]=s.charCodeAt(i)&255;return b;};
+  async function deflate(u8){try{if(typeof CompressionStream==='undefined')return null;const st=new Blob([u8]).stream().pipeThrough(new CompressionStream('deflate'));return new Uint8Array(await new Response(st).arrayBuffer());}catch(_){return null;}}
+  let assets=null;
+  async function load(){
+    if(assets)return assets;const base=new URL('fresque/',document.baseURI);
+    const get=async(n,t)=>{const r=await fetch(new URL(n,base),{cache:'no-cache'});if(!r.ok)throw new Error(n);return t?r.text():new Uint8Array(await r.arrayBuffer());};
+    const [tpl,f4,f5,f7]=await Promise.all([get('gabarit-a1.svg',1),get('arimo-400.ttf'),get('arimo-500.ttf'),get('arimo-700.ttf')]);
+    return assets={tpl,font:{'400':f4,'500':f5,'700':f7}};
+  }
+  async function build({withLoose,link,title}){
+    const A=await load();
+    try{await document.fonts.ready;}catch(_){}
+    const fr=capture(withLoose);
+    const fres=fr0=>{const b=fr.box;if(!isFinite(b[0]))return '';const pad=Math.min(fr0.w,fr0.h)*.035,bw=b[2]-b[0],bh=b[3]-b[1];
+      const s=Math.min((fr0.w-2*pad)/bw,(fr0.h-2*pad)/bh,3),tx=fr0.x+(fr0.w-bw*s)/2-b[0]*s,ty=fr0.y+(fr0.h-bh*s)/2-b[1]*s;
+      return `q ${f(fr0.x)} ${f(fr0.y)} ${f(fr0.w)} ${f(fr0.h)} re W n ${f(s)} 0 0 ${f(s)} ${f(tx)} ${f(ty)} cm\n${fr.ops}\nQ`;};
+    const content=`${f(PT)} 0 0 ${f(-PT)} 0 ${f(A1H)} cm\n`+template(A.tpl,link,fres);
+    const objs=[];const add=(dict,data)=>{objs.push({dict,data});return objs.length;};
+    const stream=async(raw,extra='')=>{const z=await deflate(raw);return z?add(`<< /Length ${z.length} /Filter /FlateDecode${extra} >>`,z):add(`<< /Length ${raw.length}${extra} >>`,raw);};
+    const catalog=add(''),pages=add(''),page=add('');
+    const contents=await stream(bytes(content));
+    const fonts={};const names={'400':'Arimo','500':'Arimo-Medium','700':'Arimo-Bold'};
+    for(const w of ['400','500','700']){const m=FM[w],ff=await stream(A.font[w],` /Length1 ${A.font[w].length}`);
+      const fd=add(`<< /Type /FontDescriptor /FontName /PZLAAA+${names[w]} /Flags 32 /FontBBox [${m.bbox.join(' ')}] /ItalicAngle 0 /Ascent ${m.asc} /Descent ${m.desc} /CapHeight ${m.cap} /StemV ${w==='700'?140:w==='500'?110:80} /FontFile2 ${ff} 0 R >>`);
+      fonts[w]=add(`<< /Type /Font /Subtype /TrueType /BaseFont /PZLAAA+${names[w]} /FirstChar 32 /LastChar 255 /Widths [${m.w.join(' ')}] /Encoding /WinAnsiEncoding /FontDescriptor ${fd} 0 R >>`);}
+    const box=`[0 0 ${A1W} ${A1H}]`;
+    objs[catalog-1].dict=`<< /Type /Catalog /Pages ${pages} 0 R >>`;
+    objs[pages-1].dict=`<< /Type /Pages /Kids [${page} 0 R] /Count 1 >>`;
+    objs[page-1].dict=`<< /Type /Page /Parent ${pages} 0 R /MediaBox ${box} /TrimBox ${box} /BleedBox ${box} /Contents ${contents} 0 R /Resources << /Font << /F400 ${fonts['400']} 0 R /F500 ${fonts['500']} 0 R /F700 ${fonts['700']} 0 R >> >> >>`;
+    const d=new Date(),p2=n=>String(n).padStart(2,'0');
+    const info=add(`<< /Title ${pdfStr(title)} /Subject ${pdfStr('A1 594 x 841 mm, CMJN Coated FOGRA39')} /Creator ${pdfStr('Le management, pièces par pièces')} /CreationDate (D:${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}) >>`);
+    const parts=[bytes('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n')];let off=parts[0].length;const xref=[];
+    for(let i=0;i<objs.length;i++){xref.push(off);const o=objs[i];const head=bytes(`${i+1} 0 obj\n${o.dict}\n`);parts.push(head);off+=head.length;
+      if(o.data){const s1=bytes('stream\n'),s2=bytes('\nendstream\n');parts.push(s1,o.data,s2);off+=s1.length+o.data.length+s2.length;}
+      const e=bytes('endobj\n');parts.push(e);off+=e.length;}
+    let tail=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+xref.map(x=>String(x).padStart(10,'0')+' 00000 n \n').join('')+`trailer\n<< /Size ${objs.length+1} /Root ${catalog} 0 R /Info ${info} 0 R >>\nstartxref\n${off}\n%%EOF\n`;
+    parts.push(bytes(tail));
+    return new Blob(parts,{type:'application/pdf'});
+  }
+  return {build,linkedCount:()=>{const s=new Set();computeContacts(S.pieces).forEach(c=>{s.add(c.a);s.add(c.b);});S.arrows.forEach(a=>{s.add(a.from);s.add(a.to);});return s.size;}};
+})();
+function openExport(){
+  const n=FRESQUE.linkedCount(), all=S.pieces.length;
+  openModal(`<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="exT" style="max-width:560px"><div class="data">
+    <h2 id="exT">Exporter la fresque</h2>
+    <div class="hint">Un PDF prêt pour l’imprimeur, sur le gabarit de la classe : format A1 (594 × 841 mm), entièrement vectoriel (net à toutes les tailles), couleurs en CMJN pour le profil Coated FOGRA39. La fresque est calée et centrée dans le cadre prévu.</div>
+    <label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer"><input type="checkbox" id="exLoose" ${n?'':'checked disabled'} style="margin-top:3px">
+      <span>Inclure aussi les cartes laissées de côté<br><span class="hint">${n?`${n} carte${n>1?'s':''} sur ${all} sont assemblées ou reliées par une flèche ; les autres restent hors du fichier si la case est décochée.`:'Aucune carte n’est encore assemblée : toutes les cartes partent dans le fichier.'}</span></span></label>
+    <div class="hint" id="exMsg" role="status"></div>
+    <div class="acts"><button class="btn" id="exClose" type="button">Fermer</button><button class="btn wine" id="exGo" type="button">Télécharger le PDF</button></div>
+  </div></div>`);
+  $('exClose').onclick=closeModal;
+  $('exGo').onclick=async()=>{
+    const b=$('exGo'),msg=$('exMsg');b.disabled=true;msg.textContent='Préparation du fichier…';
+    try{
+      if(sel)select(null);closePop();renderAll();
+      const blob=await FRESQUE.build({withLoose:$('exLoose').checked,link:boardLink(BOARD),title:'Le management, pièces par pièces · '+BOARD});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`fresque-${BOARD}-A1.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),60000);
+      msg.textContent=`PDF prêt (${(blob.size/1024/1024).toFixed(1)} Mo) : il est dans vos téléchargements.`;
+    }catch(err){msg.textContent='L’export n’a pas pu se faire. Ouvrez le jeu depuis son lien en ligne et réessayez.';console.error(err);}
+    b.disabled=false;
+  };
+}
+
 /* le code en grand, pour le projeter en classe */
 function openQrBig(link){
   openModal(`<div class="sheet qrbig" role="dialog" aria-modal="true" aria-label="QR code du plateau"><div class="qrcard big">${QR.svg(link,600)}</div>
