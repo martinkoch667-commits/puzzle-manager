@@ -2200,7 +2200,7 @@ function openIntro(){
     <div class="rule"></div>
     <form class="join" id="iForm">
       <label for="iName">Ton prénom sur le plateau</label>
-      <input id="iName" maxlength="24" autocomplete="given-name" placeholder="Martin" value="${esc(me?me.name:'')}">
+      <input id="iName" maxlength="24" autocomplete="given-name" placeholder="Votre prénom" value="${esc(me?me.name:'')}">
       <label>Ta couleur</label>
       <div class="cols" id="iCols">${PLAYER_COLORS.map(c=>`<button type="button" class="pc${c===col?' on':''}" data-c="${c}" style="background:${c}" aria-label="Couleur ${c}"></button>`).join('')}</div>
       <div class="err" id="iErr" role="status"></div>
