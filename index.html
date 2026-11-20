@@ -1017,8 +1017,39 @@ function shuffleLayout(list,rnd=Math.random){
 }
 function newGame(){S={pieces:clone(BASE),meta:{},arrows:[]};shuffleLayout(S.pieces);}
 function doShuffle(){
+  const from=new Map(S.pieces.map(p=>[p.id,{x:p.x,y:p.y}]));
   pushHistory(); shuffleLayout(S.pieces); S.meta={}; S.arrows=[]; sel=null; commit(); fitView();
+  shuffleAnim(from);
   toast('Pièces mélangées. Jonctions et flèches remises à zéro.',true);
+}
+/* Mélanger : les cartes filent en tas au milieu, se battent comme un jeu de cartes, puis sont distribuées une à une à leur place */
+let shuffling=null;
+function shuffleAnim(from){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches||!S.pieces.length) return;
+  if(shuffling){shuffling.forEach(a=>a.cancel());shuffling=null;}
+  let x1=Infinity,y1=Infinity,x2=-Infinity,y2=-Infinity;
+  S.pieces.forEach(p=>{x1=Math.min(x1,p.x);y1=Math.min(y1,p.y);x2=Math.max(x2,p.x+p.w);y2=Math.max(y2,p.y+p.h);});
+  const cx=(x1+x2)/2, cy=(y1+y2)/2, n=S.pieces.length, rnd=(a)=>(Math.random()*2-1)*a;
+  const T=(x,y,r=0,sc=1)=>`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) rotate(${r.toFixed(1)}deg) scale(${sc})`;
+  const L=$('Lpieces'); L.style.pointerEvents='none';
+  const order=S.pieces.map((p,i)=>[Math.random(),i]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+  const anims=S.pieces.map((p,i)=>{
+    const el=els.get(p.id); if(!el) return null;
+    const o=from.get(p.id)||{x:p.x,y:p.y}, px=cx-p.w/2, py=cy-p.h/2, side=i%2?1:-1, spread=Math.max(p.w,p.h)*.9;
+    const deal=.62+order.indexOf(i)/n*.26;
+    return el.animate([
+      {offset:0,transform:T(o.x,o.y)},
+      {offset:.22,transform:T(px+rnd(40),py+rnd(40),rnd(14)),easing:'ease-in-out'},
+      {offset:.32,transform:T(px+side*spread+rnd(60),py+rnd(80),side*18+rnd(8)),easing:'ease-in-out'},
+      {offset:.42,transform:T(px+rnd(30),py+rnd(30),rnd(10)),easing:'ease-in-out'},
+      {offset:.5,transform:T(px-side*spread+rnd(60),py+rnd(80),-side*18+rnd(8)),easing:'ease-in-out'},
+      {offset:.58,transform:T(px+rnd(20),py+rnd(20),rnd(6)),easing:'ease-out'},
+      {offset:deal,transform:T(px+rnd(20),py+rnd(20),rnd(6)),easing:'cubic-bezier(.2,.8,.25,1.08)'},
+      {offset:1,transform:T(p.x,p.y)}],
+      {duration:2600,fill:'none'});
+  }).filter(Boolean);
+  shuffling=anims;
+  Promise.all(anims.map(a=>a.finished.catch(()=>{}))).then(()=>{if(shuffling===anims){shuffling=null;L.style.pointerEvents='';}});
 }
 function doSolution(){
   pushHistory();
@@ -2020,7 +2051,8 @@ const FRESQUE=(()=>{
   function template(svgText,link,fres){
     const doc=new DOMParser().parseFromString(svgText,'image/svg+xml'),root=doc.documentElement;
     const vb=(root.getAttribute('viewBox')||'0 0 7016 9933').split(/[\s,]+/).map(Number);
-    const ops=[`q ${f(vb[0])} ${f(vb[1])} ${f(vb[2])} ${f(vb[3])} re W n`];let frame=null;
+    const B=3*72/25.4/PT;/* fonds perdus : 3 mm en unités du gabarit */
+    const ops=[`q ${f(vb[0]-B)} ${f(vb[1]-B)} ${f(vb[2]+2*B)} ${f(vb[3]+2*B)} re W n`];let frame=null;
     const paint=(el,st,d)=>{const fl=el.getAttribute('fill')||st.fill,sk=el.getAttribute('stroke')||st.stroke,sw=+(el.getAttribute('stroke-width')||st.sw);
       const F=fl&&fl!=='none',K=sk&&sk!=='none';if(!F&&!K)return;
       ops.push(`q ${st.m!=='1 0 0 1 0 0'?st.m+' cm ':''}${F?fillC(cmyk(fl))+' ':''}${K?strokeC(cmyk(sk))+' '+f(sw)+' w':''}\n${pathOps(d)}\n${F&&K?'B':F?'f':'S'} Q`);};
@@ -2032,7 +2064,10 @@ const FRESQUE=(()=>{
         if(el.getAttribute('stroke')&&(el.getAttribute('fill')||s.fill)==='none'&&w>vb[2]*.5){
           /* pas de trait gris : la zone sert seulement à caler la fresque ; une ligne en bas pour la devise et les rôles */
           const strip=240;frame={x,y,w,h:h-strip};ops.push(fres(frame));ops.push(footerOps(x,y+h-strip,w,strip));continue;}
-        paint(el,s,rrectD(x,y,w,h,+el.getAttribute('rx')||0,+el.getAttribute('ry')||0));continue;}
+        /* un aplat qui touche un bord de la page déborde de 3 mm, pour qu'aucun filet blanc ne reste à la coupe */
+        let X=x,Y=y,Wd=w,Hd=h;const t=s.m.split(' ').map(Number),ax=t[4]+x,ay=t[5]+y,E=.5;
+        if(!(+el.getAttribute('rx'))&&!(w>=vb[2]-E&&h>=vb[3]-E)){if(ax<=vb[0]+E){X-=B;Wd+=B;}if(ay<=vb[1]+E){Y-=B;Hd+=B;}if(ax+w>=vb[0]+vb[2]-E)Wd+=B;if(ay+h>=vb[1]+vb[3]-E)Hd+=B;}
+        paint(el,s,rrectD(X,Y,Wd,Hd,+el.getAttribute('rx')||0,+el.getAttribute('ry')||0));continue;}
       if(tag==='circle'){paint(el,s,circleD(+el.getAttribute('cx'),+el.getAttribute('cy'),+el.getAttribute('r')));continue;}
       if(tag==='ellipse'){const cx=+el.getAttribute('cx'),cy=+el.getAttribute('cy'),rx=+el.getAttribute('rx'),ry=+el.getAttribute('ry');paint(el,s,`M${cx-rx} ${cy}A${rx} ${ry} 0 1 0 ${cx+rx} ${cy}A${rx} ${ry} 0 1 0 ${cx-rx} ${cy}Z`);continue;}
       if(tag==='path'){const d=el.getAttribute('d')||'';
@@ -2122,7 +2157,16 @@ const FRESQUE=(()=>{
     const fres=fr0=>{const b=fr.box;if(!isFinite(b[0]))return '';const pad=Math.min(fr0.w,fr0.h)*.012,bw=b[2]-b[0],bh=b[3]-b[1];
       const s=Math.min((fr0.w-2*pad)/bw,(fr0.h-2*pad)/bh,3),tx=fr0.x+(fr0.w-bw*s)/2-b[0]*s,ty=fr0.y+(fr0.h-bh*s)/2-b[1]*s;
       return `q ${f(fr0.x)} ${f(fr0.y)} ${f(fr0.w)} ${f(fr0.h)} re W n ${f(s)} 0 0 ${f(s)} ${f(tx)} ${f(ty)} cm\n${fr.ops}\nQ`;};
-    const content=`${f(PT)} 0 0 ${f(-PT)} 0 ${f(A1H)} cm\n`+template(A.tpl,link,fres);
+    /* traits de coupe : la page A1 posée au centre d'une marge de 15 mm, fonds perdus de 3 mm (le fond du gabarit est blanc) */
+    const MM=72/25.4,M=15*MM,BL=3*MM,OFF=3*MM,LEN=8*MM,R=n=>+n.toFixed(2);
+    const W=A1W+2*M,H=A1H+2*M,x0=M,y0=M,x1=M+A1W,y1=M+A1H;
+    const tick=(ax,ay,bx,by)=>`${f(ax)} ${f(ay)} m ${f(bx)} ${f(by)} l S`;
+    const marks=['q 1 1 1 1 K 0.3 w',
+      tick(x0-OFF-LEN,y0,x0-OFF,y0),tick(x0,y0-OFF-LEN,x0,y0-OFF),
+      tick(x1+OFF,y0,x1+OFF+LEN,y0),tick(x1,y0-OFF-LEN,x1,y0-OFF),
+      tick(x0-OFF-LEN,y1,x0-OFF,y1),tick(x0,y1+OFF,x0,y1+OFF+LEN),
+      tick(x1+OFF,y1,x1+OFF+LEN,y1),tick(x1,y1+OFF,x1,y1+OFF+LEN),'Q'].join('\n');
+    const content=`q 1 0 0 1 ${f(M)} ${f(M)} cm ${f(PT)} 0 0 ${f(-PT)} 0 ${f(A1H)} cm\n`+template(A.tpl,link,fres)+`\nQ\n`+marks;
     const objs=[];const add=(dict,data)=>{objs.push({dict,data});return objs.length;};
     const stream=async(raw,extra='')=>{const z=await deflate(raw);return z?add(`<< /Length ${z.length} /Filter /FlateDecode${extra} >>`,z):add(`<< /Length ${raw.length}${extra} >>`,raw);};
     const catalog=add(''),pages=add(''),page=add('');
@@ -2131,12 +2175,12 @@ const FRESQUE=(()=>{
     for(const w of ['400','500','700','400i']){const m=FM[w],ff=await stream(A.font[w],` /Length1 ${A.font[w].length}`);
       const fd=add(`<< /Type /FontDescriptor /FontName /PZLAAA+${names[w]} /Flags ${w==='400i'?96:32} /FontBBox [${m.bbox.join(' ')}] /ItalicAngle ${w==='400i'?-12:0} /Ascent ${m.asc} /Descent ${m.desc} /CapHeight ${m.cap} /StemV ${w==='700'?140:w==='500'?110:80} /FontFile2 ${ff} 0 R >>`);
       fonts[w]=add(`<< /Type /Font /Subtype /TrueType /BaseFont /PZLAAA+${names[w]} /FirstChar 32 /LastChar 255 /Widths [${m.w.join(' ')}] /Encoding /WinAnsiEncoding /FontDescriptor ${fd} 0 R >>`);}
-    const box=`[0 0 ${A1W} ${A1H}]`;
+    const media=`[0 0 ${R(W)} ${R(H)}]`,trim=`[${R(x0)} ${R(y0)} ${R(x1)} ${R(y1)}]`,bleed=`[${R(x0-BL)} ${R(y0-BL)} ${R(x1+BL)} ${R(y1+BL)}]`;
     objs[catalog-1].dict=`<< /Type /Catalog /Pages ${pages} 0 R >>`;
     objs[pages-1].dict=`<< /Type /Pages /Kids [${page} 0 R] /Count 1 >>`;
-    objs[page-1].dict=`<< /Type /Page /Parent ${pages} 0 R /MediaBox ${box} /TrimBox ${box} /BleedBox ${box} /Contents ${contents} 0 R /Resources << /Font << /F400 ${fonts['400']} 0 R /F500 ${fonts['500']} 0 R /F700 ${fonts['700']} 0 R /F400i ${fonts['400i']} 0 R >> >> >>`;
+    objs[page-1].dict=`<< /Type /Page /Parent ${pages} 0 R /MediaBox ${media} /TrimBox ${trim} /BleedBox ${bleed} /Contents ${contents} 0 R /Resources << /Font << /F400 ${fonts['400']} 0 R /F500 ${fonts['500']} 0 R /F700 ${fonts['700']} 0 R /F400i ${fonts['400i']} 0 R >> >> >>`;
     const d=new Date(),p2=n=>String(n).padStart(2,'0');
-    const info=add(`<< /Title ${pdfStr(title)} /Subject ${pdfStr('A1 594 x 841 mm, CMJN Coated FOGRA39')} /Creator ${pdfStr('Le management, pièces par pièces')} /CreationDate (D:${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}) >>`);
+    const info=add(`<< /Title ${pdfStr(title)} /Subject ${pdfStr('A1 594 x 841 mm, traits de coupe, CMJN Coated FOGRA39')} /Creator ${pdfStr('Le management, pièces par pièces')} /CreationDate (D:${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}) >>`);
     const parts=[bytes('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n')];let off=parts[0].length;const xref=[];
     for(let i=0;i<objs.length;i++){xref.push(off);const o=objs[i];const head=bytes(`${i+1} 0 obj\n${o.dict}\n`);parts.push(head);off+=head.length;
       if(o.data){const s1=bytes('stream\n'),s2=bytes('\nendstream\n');parts.push(s1,o.data,s2);off+=s1.length+o.data.length+s2.length;}
