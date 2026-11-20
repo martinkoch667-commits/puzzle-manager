@@ -321,6 +321,10 @@ button{font:inherit;color:inherit}
 .fmt{border-radius:12px}
 .data textarea,.join input,.sheet input[type=text],.sheet input:not([type]){border-radius:12px}
 #legend .lg i{border-radius:5px}
+.ours-tag{text-align:right;color:#81CFF4;font-weight:500}
+.ours-row{display:flex;align-items:baseline;gap:10px;font-weight:700;font-size:21px;text-transform:uppercase;line-height:1.35}
+.ours-row i{flex:1;border-bottom:3px dotted currentColor;transform:translateY(-5px);min-width:20px}
+.ours-tools{margin-top:22px!important;font-size:14px!important}
 .ic-close{border-radius:50%}
 .qrbox{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
 .qrcard{background:#fff;padding:10px;border-radius:16px;box-shadow:0 6px 22px rgba(17,17,17,.16);flex:none;line-height:0}
@@ -1577,6 +1581,57 @@ $('bSettings').onclick=openSettings;
 $('bExport').onclick=openExport;
 $('bMore').onclick=openMenu;
 /* ---------- Menu du logo : le jeu, le manifeste, la métaphore, les sources ---------- */
+/* Sources et ours de la classe : une seule liste, pour le menu et pour l'encart de l'affiche A1. *texte* = italique */
+const SRC=[
+  {day:'Sources jour 1',items:[
+    'Fayol, H. (1916). Administration industrielle et générale.',
+    'Goleman, D. (2000). Leadership That Gets Results. Harvard Business Review, mars-avril 2000.',
+    'Marston, W. M. (1928). Emotions of Normal People.',
+    'Pittenger, D. J. (2005). Cautionary comments regarding the Myers-Briggs Type Indicator. Consulting Psychology Journal, 57(3), 210-221.',
+    'Code du travail, art. L1132-1, L1221-6, L1221-8 et L5212-2 (Légifrance).',
+    'Agefiph (2023). Cahier n° 5 : « Aménagement raisonnable ».',
+    'France Compétences. Fiche RNCP 38942, « Directeur artistique », bloc 3, compétence C3.1.',
+    'La Fresque du Climat (atelier créé par Cédric Ringenbach en 2015), fresqueduclimat.org.',
+    'Vidéos : La Brève du Manager (2023) ; La Fresque du Climat (2021) ; Agefiph (2019).',
+    'Mini-test DISC gratuit : fasterclass.fr (non validé scientifiquement à ma connaissance).']},
+  {day:'Sources jour 2',items:[
+    'Doran, G. T. (1981). There’s a S.M.A.R.T. way to write management’s goals and objectives. *Management Review*, 70(11), 35-36.',
+    'Goleman, D. (2000). Leadership That Gets Results. *Harvard Business Review*, mars-avril 2000.',
+    'Hersey, P. & Blanchard, K. H. (1969). Life cycle theory of leadership. *Training and Development Journal.*',
+    'Bower, S. A. & Bower, G. H. (1976). Asserting Yourself: A Practical Guide for Positive Change.',
+    'Renninger, L. (2020). The secret to giving great feedback. TED, série The Way We Work.',
+    'France Compétences. Fiche RNCP 38942, bloc 3, compétence C3.3.',
+    'Vidéos : Parlons Projet by BGDP (2021) ; TED (2020).',
+    'SWOT, matrice d’Eisenhower, RACI : outils d’usage courant, sans auteur unique établi.']},
+  {day:'Sources du jour 3',items:[
+    'Edmondson, A. (1999). *Psychological safety and learning behavior in work teams.* Administrative Science Quarterly, 44(2).',
+    'Rozovsky, J. (2015). *The five keys to a successful Google team.* re:Work, 17 novembre 2015.',
+    'Diehl, M. & Stroebe, W. (1987). *Productivity loss in brainstorming groups.* Journal of Personality and Social Psychology, 53(3), 497-509.',
+    'Mullen, B., Johnson, C. & Salas, E. (1991). *Productivity loss in brainstorming groups: a meta-analytic integration.*',
+    'Rohrbach, B. *Méthode 6-3-5*, revue Absatzwirtschaft, fin des années 1960.',
+    'IDEO U. (2025). *7 Rules for the Perfect Brainstorming Session.*',
+    'de Bono, E. (1985). *Six Thinking Hats.*',
+    'Lecerf-Thomas, B. (2009). *Neurosciences et management : le pouvoir de changer.* Eyrolles.',
+    'Jehn, K. A. (1995). Administrative Science Quarterly, 40(2).',
+    'De Dreu, C. & Weingart, L. (2003). Journal of Applied Psychology, 88(4), 741-749.',
+    'De Wit, F., Greer, L. & Jehn, K. (2012). Journal of Applied Psychology, 97(2), 360-390.',
+    'Rosenberg, M. B. (1999). *Nonviolent Communication.* En français : *Les mots sont des fenêtres*, La Découverte.',
+    'Fisher, R. & Ury, W. (1981). *Getting to Yes.*',
+    'Quote Investigator (2 mars 2017), sur la citation prêtée à Einstein.']},
+  {day:'Sources du jour 4',items:[
+    'Sinek, S. (2009). How great leaders inspire action. TEDxPuget Sound, mis en ligne par TED en 2010.',
+    'Code de la propriété intellectuelle, art. L121-1 (droit moral) et L122-5, 3° (courte citation). Légifrance.',
+    'Règlement (UE) 2024/1689 sur l’intelligence artificielle, art. 50 : obligations de transparence applicables depuis le 2 août 2026.',
+    'APIE, ministère de l’Économie (2026). « Quel droit d’auteur à l’ère de l’intelligence artificielle générative ? »',
+    'France Inter (16 juin 2026). Droit d’auteur : les géants de l’IA pillent-ils les œuvres en toute impunité ? Le débat.',
+    'Syllabus UE 5.3 Management, LISAA (évaluation : 70 % mise en situation, 30 % QCM).',
+    'France Compétences. Fiche RNCP 38942, bloc 3, compétence C3.3.',
+    'Quote Investigator (2 mars 2017), sur la citation prêtée à Einstein.']}];
+const OURS={tag:['Bien s’organiser,','c’est déjà bien manager.'],roles:[['DA-manager','Pauline'],['Production','Martin'],['Sources','Lorine'],['Climat','Imane']],
+  tools:'*Outils utilisés :* *Figma* pour l’organisation et *Claude Code AI* pour l’outil numérique.'};
+/* morceaux d'un texte balisé : *…* bascule le style (italique, ou gras pour l'ours) */
+const srcParts=t=>t.split('*').map((x,i)=>({t:x,em:i%2===1})).filter(x=>x.t);
+const srcHTML=(t,tag='i')=>srcParts(t).map(x=>x.em?`<${tag}>${esc(x.t)}</${tag}>`:esc(x.t)).join('');
 const INFO={
   manifeste:{badge:'Manifeste',dot:'#FF8801',bg:'#C5ECFF',item:'Le manifeste',sub:'Notre vision du management',
     html:`<h2>Notre vision du management</h2><div class="st">Construire ensemble les fondations d’un management efficace</div>
@@ -1588,44 +1643,10 @@ const INFO={
       <p>Comme dans un puzzle, <b>chaque élément a son importance</b> et c’est en les reliant les uns aux autres que l’on obtient un <b>ensemble cohérent</b>.</p>
       <p>Cela montre que pour bien manager, il faut savoir associer toutes ces notions afin de faire avancer une équipe vers un <b>objectif commun</b>.</p>
       <div class="ft">La métaphore</div>`},
-  sources:{badge:'Ours',dot:'#81CFF4',bg:'#FEFAB0',item:'Les sources',sub:'Bien s’organiser, c’est déjà bien manager',long:1,
-    html:`<h2>Les sources du puzzle</h2><div class="st">Bien s’organiser,<br>c’est déjà bien manager.</div>
-      <h3>Sources jour 1</h3><ul>
-      <li>Fayol, H. (1916). <i>Administration industrielle et générale.</i></li>
-      <li>Goleman, D. (2000). Leadership That Gets Results. <i>Harvard Business Review</i>, mars-avril 2000.</li>
-      <li>Marston, W. M. (1928). <i>Emotions of Normal People.</i></li>
-      <li>Pittenger, D. J. (2005). Cautionary comments regarding the Myers-Briggs Type Indicator. <i>Consulting Psychology Journal</i>, 57(3), 210-221.</li>
-      <li>Code du travail, art. L1132-1, L1221-6, L1221-8 et L5212-2 (Légifrance).</li>
-      <li>Agefiph (2023). Cahier n° 5 : « Aménagement raisonnable ».</li>
-      <li>France Compétences. Fiche RNCP 38942, « Directeur artistique », bloc 3, compétence C3.1.</li>
-      <li>La Fresque du Climat (atelier créé par Cédric Ringenbach en 2015), fresqueduclimat.org.</li>
-      <li>Vidéos : La Brève du Manager (2023) ; La Fresque du Climat (2021) ; Agefiph (2019).</li>
-      <li>Mini-test DISC gratuit : fasterclass.fr (non validé scientifiquement à ma connaissance).</li></ul>
-      <h3>Sources jour 2</h3><ul>
-      <li>Doran, G. T. (1981). There’s a S.M.A.R.T. way to write management’s goals and objectives. <i>Management Review</i>, 70(11), 35-36.</li>
-      <li>Goleman, D. (2000). Leadership That Gets Results. <i>Harvard Business Review</i>, mars-avril 2000.</li>
-      <li>Hersey, P. &amp; Blanchard, K. H. (1969). Life cycle theory of leadership. <i>Training and Development Journal.</i></li>
-      <li>Bower, S. A. &amp; Bower, G. H. (1976). Asserting Yourself: A Practical Guide for Positive Change.</li>
-      <li>Renninger, L. (2020). The secret to giving great feedback. TED, série The Way We Work.</li>
-      <li>France Compétences. Fiche RNCP 38942, bloc 3, compétence C3.3.</li>
-      <li>Vidéos : Parlons Projet by BGDP (2021) ; TED (2020).</li>
-      <li>SWOT, matrice d’Eisenhower, RACI : outils d’usage courant, sans auteur unique établi.</li></ul>
-      <h3>Sources du jour 3</h3><ul>
-      <li>Edmondson, A. (1999). <i>Psychological safety and learning behavior in work teams.</i> Administrative Science Quarterly, 44(2).</li>
-      <li>Rozovsky, J. (2015). <i>The five keys to a successful Google team.</i> re:Work, 17 novembre 2015.</li>
-      <li>Diehl, M. &amp; Stroebe, W. (1987). <i>Productivity loss in brainstorming groups.</i> Journal of Personality and Social Psychology, 53(3), 497-509.</li>
-      <li>Mullen, B., Johnson, C. &amp; Salas, E. (1991). <i>Productivity loss in brainstorming groups: a meta-analytic integration.</i></li>
-      <li>Rohrbach, B. <i>Méthode 6-3-5</i>, revue Absatzwirtschaft, fin des années 1960.</li>
-      <li>IDEO U. (2025). <i>7 Rules for the Perfect Brainstorming Session.</i></li>
-      <li>de Bono, E. (1985). <i>Six Thinking Hats.</i></li>
-      <li>Lecerf-Thomas, B. (2009). <i>Neurosciences et management : le pouvoir de changer.</i> Eyrolles.</li>
-      <li>Jehn, K. A. (1995). Administrative Science Quarterly, 40(2).</li>
-      <li>De Dreu, C. &amp; Weingart, L. (2003). Journal of Applied Psychology, 88(4), 741-749.</li>
-      <li>De Wit, F., Greer, L. &amp; Jehn, K. (2012). Journal of Applied Psychology, 97(2), 360-390.</li>
-      <li>Rosenberg, M. B. (1999). <i>Nonviolent Communication.</i> En français : <i>Les mots sont des fenêtres</i>, La Découverte.</li>
-      <li>Fisher, R. &amp; Ury, W. (1981). <i>Getting to Yes.</i></li>
-      <li>Quote Investigator (2 mars 2017), sur la citation prêtée à Einstein.</li></ul>
-      <div class="ft">Les sources</div>`}
+  sources:{badge:'Sources',dot:'#0E4E6D',bg:'#C5ECFF',item:'Les sources',sub:'Les références des quatre jours',long:1,
+    html:SRC.map(d=>`<h3>${esc(d.day)}</h3><ul>${d.items.map(t=>`<li>${srcHTML(t)}</li>`).join('')}</ul>`).join('')+`<div class="ft">Les sources</div>`},
+  ours:{badge:'Ours',dot:'#81CFF4',bg:'#FEFAB0',item:'L’ours',sub:'Qui a fait quoi',
+    html:`<div class="st ours-tag">${OURS.tag.map(esc).join('<br>')}</div>${OURS.roles.map(([r,n])=>`<div class="ours-row"><span>${esc(r)}</span><i></i><span>${esc(n)}</span></div>`).join('')}<p class="ours-tools">${srcHTML(OURS.tools,'b')}</p>`}
 };
 const infoWrap=(k,extra='',attrs='')=>{const I=INFO[k];return `<div class="ic-wrap${I.long?' long':''}"${attrs}><span class="badge2" style="background:${I.dot}">${esc(I.badge)}</span><article class="icard${I.long?' long':''}" style="--bg:${I.bg}">${I.html}</article>${extra}</div>`;};
 $('mpItems').innerHTML=Object.entries(INFO).map(([k,I])=>`<button type="button" class="mp-it" data-info="${k}"><span class="dot" style="background:${I.dot}">${esc(I.badge)}</span><span class="tx"><b>${esc(I.item)}</b><small>${esc(I.sub)}</small></span><svg class="ar" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`).join('')
@@ -1878,8 +1899,8 @@ function openShare(){
 /* ---------- Export de la fresque : PDF A1 vectoriel, couleurs CMJN (Coated FOGRA39), posé sur le gabarit ---------- */
 const FRESQUE=(()=>{
   /* couleurs du jeu converties une fois pour toutes avec le profil Coated FOGRA39 (intention colorimétrique relative) ; le noir du texte part en 100 % noir */
-  const CMYK={"0E4E6D":[1.0,0.64,0.356,0.243],"111111":[0,0,0,1],"3C3908":[0.673,0.566,0.888,0.683],"480624":[0.576,0.921,0.448,0.803],"6E6915":[0.547,0.414,1.0,0.334],"792D0D":[0.33,0.866,1.0,0.48],"81CFF4":[0.512,0.0,0.0,0.0],"880B6D":[0.567,1.0,0.168,0.106],"9E960A":[0.411,0.285,1.0,0.122],"9F0049":[0.243,1.0,0.412,0.259],"B1E6FF":[0.34,0.0,0.0,0.0],"C1BABA":[0.277,0.241,0.231,0.035],"C5ECFF":[0.269,0.0,0.0,0.0],"CCC20E":[0.268,0.132,1.0,0.016],"D3F1FF":[0.204,0.0,0.003,0.0],"EBF9FF":[0.1,0.0,0.005,0.0],"F3EA5B":[0.101,0.0,0.73,0.0],"FB75DE":[0.188,0.618,0.0,0.0],"FBC4EF":[0.055,0.306,0.0,0.0],"FC5912":[0.0,0.762,0.982,0.0],"FE8D5D":[0.0,0.563,0.644,0.0],"FEFAB0":[0.037,0.0,0.397,0.0],"FF8801":[0.0,0.563,0.997,0.0],"FF9BE9":[0.112,0.483,0.0,0.0],"FFB18F":[0.0,0.401,0.433,0.0],"FFD9C9":[0.0,0.206,0.2,0.0],"FFE5F9":[0.007,0.148,0.0,0.0],"FFFFFF":[0.0,0.0,0.0,0.0]};
-  const FM={"400":{"w":[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,0,556,0,222,0,333,1000,0,0,333,0,0,333,1000,0,0,0,0,222,222,333,333,350,556,1000,333,1000,0,333,944,0,0,0,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,552,400,549,333,333,333,576,537,333,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,549,611,556,556,556,556,500,556,500],"bbox":[-375,-212,1000,896],"asc":905,"desc":-212,"cap":688},"500":{"w":[278,296,395,556,556,889,686,207,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,296,296,584,584,584,574,1002,686,686,722,722,667,611,778,722,278,519,686,574,833,722,778,667,778,722,667,611,722,667,944,667,667,611,296,278,296,507,556,333,556,574,519,574,556,296,574,574,241,241,519,241,852,574,574,574,574,352,519,296,574,519,741,519,519,500,353,267,353,584,0,556,0,241,0,389,1000,0,0,333,0,0,333,1000,0,0,0,0,241,241,389,389,350,556,1000,333,1000,0,333,944,0,0,0,278,333,556,556,556,556,267,556,333,737,370,556,584,333,737,552,400,549,333,333,333,584,543,333,333,333,365,556,834,834,834,611,686,686,686,686,686,686,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,519,556,556,556,556,278,278,278,278,574,574,574,574,574,574,574,549,611,574,574,574,574,519,574,519],"bbox":[-273,-215,1000,896],"asc":905,"desc":-212,"cap":688},"700":{"w":[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,0,556,0,278,0,500,1000,0,0,333,0,0,333,1000,0,0,0,0,278,278,500,500,350,556,1000,333,1000,0,333,944,0,0,0,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,552,400,549,333,333,333,600,556,333,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,549,611,611,611,611,611,556,611,556],"bbox":[-454,-222,1000,905],"asc":905,"desc":-212,"cap":688}};
+  const CMYK={"0E4E6D":[1.0,0.64,0.356,0.243],"111111":[0,0,0,1],"1A1A1A":[0,0,0,1],"3C3908":[0.673,0.566,0.888,0.683],"480624":[0.576,0.921,0.448,0.803],"6E6915":[0.547,0.414,1.0,0.334],"792D0D":[0.33,0.866,1.0,0.48],"81CFF4":[0.512,0.0,0.0,0.0],"880B6D":[0.567,1.0,0.168,0.106],"9E960A":[0.411,0.285,1.0,0.122],"9F0049":[0.243,1.0,0.412,0.259],"B1E6FF":[0.34,0.0,0.0,0.0],"C1BABA":[0.277,0.241,0.231,0.035],"C5ECFF":[0.269,0.0,0.0,0.0],"CCC20E":[0.268,0.132,1.0,0.016],"D3F1FF":[0.204,0.0,0.003,0.0],"EBF9FF":[0.1,0.0,0.005,0.0],"F3EA5B":[0.101,0.0,0.73,0.0],"FB75DE":[0.188,0.618,0.0,0.0],"FBC4EF":[0.055,0.306,0.0,0.0],"FC5912":[0.0,0.762,0.982,0.0],"FE8D5D":[0.0,0.563,0.644,0.0],"FEFAB0":[0.037,0.0,0.397,0.0],"FF8801":[0.0,0.563,0.997,0.0],"FF9BE9":[0.112,0.483,0.0,0.0],"FFB18F":[0.0,0.401,0.433,0.0],"FFD9C9":[0.0,0.206,0.2,0.0],"FFE5F9":[0.007,0.148,0.0,0.0],"FFFFFF":[0.0,0.0,0.0,0.0]};
+  const FM={"400":{"w":[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,0,556,0,222,0,333,1000,0,0,333,0,0,333,1000,0,0,0,0,222,222,333,333,350,556,1000,333,1000,0,333,944,0,0,0,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,552,400,549,333,333,333,576,537,333,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,549,611,556,556,556,556,500,556,500],"bbox":[-375,-212,1000,896],"asc":905,"desc":-212,"cap":688},"500":{"w":[278,296,395,556,556,889,686,207,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,296,296,584,584,584,574,1002,686,686,722,722,667,611,778,722,278,519,686,574,833,722,778,667,778,722,667,611,722,667,944,667,667,611,296,278,296,507,556,333,556,574,519,574,556,296,574,574,241,241,519,241,852,574,574,574,574,352,519,296,574,519,741,519,519,500,353,267,353,584,0,556,0,241,0,389,1000,0,0,333,0,0,333,1000,0,0,0,0,241,241,389,389,350,556,1000,333,1000,0,333,944,0,0,0,278,333,556,556,556,556,267,556,333,737,370,556,584,333,737,552,400,549,333,333,333,584,543,333,333,333,365,556,834,834,834,611,686,686,686,686,686,686,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,519,556,556,556,556,278,278,278,278,574,574,574,574,574,574,574,549,611,574,574,574,574,519,574,519],"bbox":[-273,-215,1000,896],"asc":905,"desc":-212,"cap":688},"700":{"w":[278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,0,556,0,278,0,500,1000,0,0,333,0,0,333,1000,0,0,0,0,278,278,500,500,350,556,1000,333,1000,0,333,944,0,0,0,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,552,400,549,333,333,333,600,556,333,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,549,611,611,611,611,611,556,611,556],"bbox":[-454,-222,1000,905],"asc":905,"desc":-212,"cap":688},"400i":{"w":[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,0,556,0,222,0,333,1000,0,0,333,0,0,333,1000,0,0,0,0,222,222,333,333,350,556,1000,333,1000,0,333,944,0,0,0,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,552,400,549,333,333,333,576,537,333,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,549,611,556,556,556,556,500,556,500],"bbox":[-491,-222,1022,892],"asc":905,"desc":-212,"cap":688}};
   const PT=0.24, A1W=1683.78, A1H=2383.94, ASC=1854/2048;
   const f=v=>String(+(+v).toFixed(3));
   const hexOf=c=>{c=String(c||'').trim().toLowerCase();if(c==='white')return 'FFFFFF';if(c==='black')return '000000';
@@ -2016,7 +2037,9 @@ const FRESQUE=(()=>{
       const tr=(el.getAttribute('transform')||'').match(/translate\(\s*([-\d.e]+)[\s,]*([-\d.e]*)\s*\)/);if(tr)s.m=`1 0 0 1 ${f(+tr[1])} ${f(+tr[2]||0)}`;
       if(tag==='g'){walk(el,s);continue;}
       if(tag==='rect'){const x=+el.getAttribute('x')||0,y=+el.getAttribute('y')||0,w=+el.getAttribute('width'),h=+el.getAttribute('height');
-        if(el.getAttribute('stroke')&&(el.getAttribute('fill')||s.fill)==='none'&&w>vb[2]*.5){frame={x,y,w,h};paint(el,s,rrectD(x,y,w,h,0,0));ops.push(fres(frame));frame.done=1;continue;}
+        if(el.getAttribute('stroke')&&(el.getAttribute('fill')||s.fill)==='none'&&w>vb[2]*.5){
+          /* le cadre de la fresque laisse la place à l'encart des sources, en bas de page */
+          const bh=Math.round(h*.27),g=110,fh=h-bh-g;frame={x,y,w,h:fh};paint(el,s,rrectD(x,y,w,fh,0,0));ops.push(fres(frame));ops.push(bandOps(x,y+fh+g,w,bh));continue;}
         paint(el,s,rrectD(x,y,w,h,+el.getAttribute('rx')||0,+el.getAttribute('ry')||0));continue;}
       if(tag==='circle'){paint(el,s,circleD(+el.getAttribute('cx'),+el.getAttribute('cy'),+el.getAttribute('r')));continue;}
       if(tag==='ellipse'){const cx=+el.getAttribute('cx'),cy=+el.getAttribute('cy'),rx=+el.getAttribute('rx'),ry=+el.getAttribute('ry');paint(el,s,`M${cx-rx} ${cy}A${rx} ${ry} 0 1 0 ${cx+rx} ${cy}A${rx} ${ry} 0 1 0 ${cx-rx} ${cy}Z`);continue;}
@@ -2027,6 +2050,52 @@ const FRESQUE=(()=>{
     walk(root,{fill:root.getAttribute('fill')||'black',stroke:root.getAttribute('stroke')||'none',sw:root.getAttribute('stroke-width')||1,m:'1 0 0 1 0 0'});
     if(!frame){frame={x:vb[0]+vb[2]*.05,y:vb[1]+vb[3]*.2,w:vb[2]*.9,h:vb[3]*.75};ops.push(fres(frame));}
     ops.push('Q');return ops.join('\n');
+  }
+  /* ---------- encart du bas : les sources sur une colonne par jour, l'ours à droite ---------- */
+  const wid=(fk,s,fs)=>{let w=0;for(const ch of s){let c=ch.codePointAt(0);if(c>=256||(c>=128&&c<160))c=W1252[c];if(c==null||c<32)continue;w+=FM[fk].w[c-32]||0;}return w*fs/1000;};
+  function wrap(parts,fs,width,fk,fkEm){
+    const cl=[];let cur=[];
+    parts.forEach(p=>p.t.split(/(\s+)/).forEach(w=>{if(!w)return;if(/^\s+$/.test(w)){if(cur.length)cl.push(cur);cur=[];}else cur.push({s:w,fk:p.em?fkEm:fk});}));
+    if(cur.length)cl.push(cur);
+    const sp=wid(fk,' ',fs),lines=[];let line=[],x=0;
+    for(const c of cl){const cw=c.reduce((a,w)=>a+wid(w.fk,w.s,fs),0);
+      if(line.length&&x+sp+cw>width){lines.push(line);line=[];x=0;}
+      if(line.length)x+=sp;for(const w of c){line.push({...w,x});x+=wid(w.fk,w.s,fs);}}
+    if(line.length)lines.push(line);return lines;
+  }
+  const txt=(fk,s,fs,x,base)=>`BT /F${fk} 1 Tf ${f(fs)} 0 0 ${f(-fs)} ${f(x)} ${f(base)} Tm ${pdfStr(s)} Tj ET`;
+  function bandOps(x,y,w,h){
+    const o=[],gap=110,ow=Math.round(w*.25),sw=w-ow-gap,ink=cmyk('#1A1A1A');
+    /* les sources */
+    const bg=cmyk('#C5ECFF'),pad=95,cg=85,n=SRC.length,cw=(sw-2*pad-(n-1)*cg)/n;
+    const lay=fs=>SRC.map(d=>{const items=d.items.map(t=>wrap(srcParts(t),fs,cw-fs*1.15,'400','400i'));
+      return {d,items,hg:fs*1.55*1.3+items.reduce((a,l)=>a+l.length*fs*1.3+fs*.32,0)};});
+    let fs=42,L=lay(fs);const foot=s=>s*2.4;
+    while(fs>16&&Math.max(...L.map(c=>c.hg))>h-2*pad-foot(fs)){fs-=1;L=lay(fs);}
+    o.push(`${fillC(bg)}\n${f(x)} ${f(y)} ${f(sw)} ${f(h)} re f\n${fillC(ink)}`);
+    L.forEach((c,i)=>{const cx=x+pad+i*(cw+cg);let cy=y+pad;const hs=fs*1.55;
+      o.push(txt('700',c.d.day,hs,cx,cy+hs*.93));cy+=hs*1.3;
+      c.items.forEach(lines=>{o.push(txt('400','•',fs,cx+fs*.15,cy+fs*1.0));
+        lines.forEach(line=>{line.forEach(wd=>o.push(txt(wd.fk,wd.s,fs,cx+fs*1.15+wd.x,cy+fs*1.0)));cy+=fs*1.3;});cy+=fs*.32;});});
+    const ry=y+h-pad-fs*1.55;
+    o.push(`${fillC(mix(ink,bg,.45))}\n${f(x+pad)} ${f(ry)} ${f(sw-2*pad)} ${f(Math.max(2,fs*.07))} re f\n${fillC(mix(ink,bg,.62))}\n`+txt('400','Les sources',fs*.85,x+pad,y+h-pad));
+    /* l'ours */
+    const ox=x+sw+gap,obg=cmyk('#FEFAB0'),op=95,iw=ow-2*op,up=t=>t.toLocaleUpperCase('fr-FR');
+    const measure=u=>{const t=70*u,r=48*u,tl=34*u,lines=wrap(srcParts(OURS.tools),tl,iw,'400','700');
+      return {u,t,r,tl,lines,H:2*t*1.15+90*u+OURS.roles.length*r*1.3+70*u+lines.length*tl*1.35,
+        fitW:Math.max(...OURS.tag.map(s=>wid('500',up(s),t)),...OURS.roles.map(([a,b])=>wid('700',up(a)+'  ....  '+up(b),r)))<=iw};};
+    let M=measure(1.5);for(let u=1.5;u>.3&&(M.H>h-2*op||!M.fitW);u-=.02)M=measure(u);
+    o.push(`${fillC(obg)}\n${f(ox)} ${f(y)} ${f(ow)} ${f(h)} re f`);
+    let cy=y+op;
+    o.push(fillC(cmyk('#81CFF4')));
+    OURS.tag.forEach(s=>{const S=up(s);o.push(txt('500',S,M.t,ox+ow-op-wid('500',S,M.t),cy+M.t*.93));cy+=M.t*1.15;});
+    cy+=90*M.u;o.push(fillC(ink));
+    const dw=wid('700','.',M.r);
+    OURS.roles.forEach(([a,b])=>{const A=up(a),B=up(b),wb=wid('700',B,M.r),xa=ox+op,xb=ox+ow-op-wb,x0=xa+wid('700',A,M.r)+M.r*.3,x1=xb-M.r*.3,nd=Math.max(0,Math.floor((x1-x0)/dw)),base=cy+M.r*.93;
+      o.push(txt('700',A,M.r,xa,base),txt('700','.'.repeat(nd),M.r,x1-nd*dw,base),txt('700',B,M.r,xb,base));cy+=M.r*1.3;});
+    cy+=70*M.u;
+    M.lines.forEach(line=>{line.forEach(wd=>o.push(txt(wd.fk,wd.s,M.tl,ox+op+wd.x,cy+M.tl*.95)));cy+=M.tl*1.35;});
+    return o.join('\n');
   }
   function qrOps(link,b,fill){
     const q=QR.make(link);if(!q)return '';const n=q.size,m=(b[2]-b[0])/n;let s=fillC(cmyk(fill))+'\n';
@@ -2040,8 +2109,8 @@ const FRESQUE=(()=>{
   async function load(){
     if(assets)return assets;const base=new URL('fresque/',document.baseURI);
     const get=async(n,t)=>{const r=await fetch(new URL(n,base),{cache:'no-cache'});if(!r.ok)throw new Error(n);return t?r.text():new Uint8Array(await r.arrayBuffer());};
-    const [tpl,f4,f5,f7]=await Promise.all([get('gabarit-a1.svg',1),get('arimo-400.ttf'),get('arimo-500.ttf'),get('arimo-700.ttf')]);
-    return assets={tpl,font:{'400':f4,'500':f5,'700':f7}};
+    const [tpl,f4,f5,f7,f4i]=await Promise.all([get('gabarit-a1.svg',1),get('arimo-400.ttf'),get('arimo-500.ttf'),get('arimo-700.ttf'),get('arimo-400i.ttf')]);
+    return assets={tpl,font:{'400':f4,'500':f5,'700':f7,'400i':f4i}};
   }
   async function build({withLoose,link,title}){
     const A=await load();
@@ -2055,14 +2124,14 @@ const FRESQUE=(()=>{
     const stream=async(raw,extra='')=>{const z=await deflate(raw);return z?add(`<< /Length ${z.length} /Filter /FlateDecode${extra} >>`,z):add(`<< /Length ${raw.length}${extra} >>`,raw);};
     const catalog=add(''),pages=add(''),page=add('');
     const contents=await stream(bytes(content));
-    const fonts={};const names={'400':'Arimo','500':'Arimo-Medium','700':'Arimo-Bold'};
-    for(const w of ['400','500','700']){const m=FM[w],ff=await stream(A.font[w],` /Length1 ${A.font[w].length}`);
-      const fd=add(`<< /Type /FontDescriptor /FontName /PZLAAA+${names[w]} /Flags 32 /FontBBox [${m.bbox.join(' ')}] /ItalicAngle 0 /Ascent ${m.asc} /Descent ${m.desc} /CapHeight ${m.cap} /StemV ${w==='700'?140:w==='500'?110:80} /FontFile2 ${ff} 0 R >>`);
+    const fonts={};const names={'400':'Arimo','500':'Arimo-Medium','700':'Arimo-Bold','400i':'Arimo-Italic'};
+    for(const w of ['400','500','700','400i']){const m=FM[w],ff=await stream(A.font[w],` /Length1 ${A.font[w].length}`);
+      const fd=add(`<< /Type /FontDescriptor /FontName /PZLAAA+${names[w]} /Flags ${w==='400i'?96:32} /FontBBox [${m.bbox.join(' ')}] /ItalicAngle ${w==='400i'?-12:0} /Ascent ${m.asc} /Descent ${m.desc} /CapHeight ${m.cap} /StemV ${w==='700'?140:w==='500'?110:80} /FontFile2 ${ff} 0 R >>`);
       fonts[w]=add(`<< /Type /Font /Subtype /TrueType /BaseFont /PZLAAA+${names[w]} /FirstChar 32 /LastChar 255 /Widths [${m.w.join(' ')}] /Encoding /WinAnsiEncoding /FontDescriptor ${fd} 0 R >>`);}
     const box=`[0 0 ${A1W} ${A1H}]`;
     objs[catalog-1].dict=`<< /Type /Catalog /Pages ${pages} 0 R >>`;
     objs[pages-1].dict=`<< /Type /Pages /Kids [${page} 0 R] /Count 1 >>`;
-    objs[page-1].dict=`<< /Type /Page /Parent ${pages} 0 R /MediaBox ${box} /TrimBox ${box} /BleedBox ${box} /Contents ${contents} 0 R /Resources << /Font << /F400 ${fonts['400']} 0 R /F500 ${fonts['500']} 0 R /F700 ${fonts['700']} 0 R >> >> >>`;
+    objs[page-1].dict=`<< /Type /Page /Parent ${pages} 0 R /MediaBox ${box} /TrimBox ${box} /BleedBox ${box} /Contents ${contents} 0 R /Resources << /Font << /F400 ${fonts['400']} 0 R /F500 ${fonts['500']} 0 R /F700 ${fonts['700']} 0 R /F400i ${fonts['400i']} 0 R >> >> >>`;
     const d=new Date(),p2=n=>String(n).padStart(2,'0');
     const info=add(`<< /Title ${pdfStr(title)} /Subject ${pdfStr('A1 594 x 841 mm, CMJN Coated FOGRA39')} /Creator ${pdfStr('Le management, pièces par pièces')} /CreationDate (D:${d.getFullYear()}${p2(d.getMonth()+1)}${p2(d.getDate())}${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}) >>`);
     const parts=[bytes('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n')];let off=parts[0].length;const xref=[];
