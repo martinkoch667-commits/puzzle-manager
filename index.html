@@ -2038,8 +2038,7 @@ const FRESQUE=(()=>{
       if(tag==='g'){walk(el,s);continue;}
       if(tag==='rect'){const x=+el.getAttribute('x')||0,y=+el.getAttribute('y')||0,w=+el.getAttribute('width'),h=+el.getAttribute('height');
         if(el.getAttribute('stroke')&&(el.getAttribute('fill')||s.fill)==='none'&&w>vb[2]*.5){
-          /* le cadre de la fresque laisse la place à l'encart des sources, en bas de page */
-          const bh=Math.round(h*.27),g=110,fh=h-bh-g;frame={x,y,w,h:fh};paint(el,s,rrectD(x,y,w,fh,0,0));ops.push(fres(frame));ops.push(bandOps(x,y+fh+g,w,bh));continue;}
+          frame={x,y,w,h};paint(el,s,rrectD(x,y,w,h,0,0));ops.push(fres(frame));continue;}
         paint(el,s,rrectD(x,y,w,h,+el.getAttribute('rx')||0,+el.getAttribute('ry')||0));continue;}
       if(tag==='circle'){paint(el,s,circleD(+el.getAttribute('cx'),+el.getAttribute('cy'),+el.getAttribute('r')));continue;}
       if(tag==='ellipse'){const cx=+el.getAttribute('cx'),cy=+el.getAttribute('cy'),rx=+el.getAttribute('rx'),ry=+el.getAttribute('ry');paint(el,s,`M${cx-rx} ${cy}A${rx} ${ry} 0 1 0 ${cx+rx} ${cy}A${rx} ${ry} 0 1 0 ${cx-rx} ${cy}Z`);continue;}
