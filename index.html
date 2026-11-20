@@ -2038,7 +2038,8 @@ const FRESQUE=(()=>{
       if(tag==='g'){walk(el,s);continue;}
       if(tag==='rect'){const x=+el.getAttribute('x')||0,y=+el.getAttribute('y')||0,w=+el.getAttribute('width'),h=+el.getAttribute('height');
         if(el.getAttribute('stroke')&&(el.getAttribute('fill')||s.fill)==='none'&&w>vb[2]*.5){
-          frame={x,y,w,h};paint(el,s,rrectD(x,y,w,h,0,0));ops.push(fres(frame));continue;}
+          /* pas de trait gris : la zone sert seulement à caler la fresque ; une ligne en bas pour la devise et les rôles */
+          const strip=240;frame={x,y,w,h:h-strip};ops.push(fres(frame));ops.push(footerOps(x,y+h-strip,w,strip));continue;}
         paint(el,s,rrectD(x,y,w,h,+el.getAttribute('rx')||0,+el.getAttribute('ry')||0));continue;}
       if(tag==='circle'){paint(el,s,circleD(+el.getAttribute('cx'),+el.getAttribute('cy'),+el.getAttribute('r')));continue;}
       if(tag==='ellipse'){const cx=+el.getAttribute('cx'),cy=+el.getAttribute('cy'),rx=+el.getAttribute('rx'),ry=+el.getAttribute('ry');paint(el,s,`M${cx-rx} ${cy}A${rx} ${ry} 0 1 0 ${cx+rx} ${cy}A${rx} ${ry} 0 1 0 ${cx-rx} ${cy}Z`);continue;}
@@ -2096,6 +2097,17 @@ const FRESQUE=(()=>{
     M.lines.forEach(line=>{line.forEach(wd=>o.push(txt(wd.fk,wd.s,M.tl,ox+op+wd.x,cy+M.tl*.95)));cy+=M.tl*1.35;});
     return o.join('\n');
   }
+  /* la ligne du bas : « Bien s'organiser, c'est déjà bien manager. » à gauche, les rôles à droite */
+  function footerOps(x,y,w,h){
+    const up=t=>t.toLocaleUpperCase('fr-FR'),tag=up(OURS.tag.join(' ')),roles=OURS.roles.map(([a,b])=>[up(a),up(b)]);
+    let fs=66,sp,ws;
+    const measure=fs=>{sp=fs*.4;ws=roles.map(([a,b])=>wid('700',a,fs)+sp+wid('400',b,fs));return wid('500',tag,fs)+fs*2.5+ws.reduce((t,v)=>t+v,0)+(roles.length-1)*fs*1.6;};
+    while(fs>20&&measure(fs)>w)fs-=1;measure(fs);
+    const base=y+h-20,o=[fillC(cmyk('#9F0049')),txt('500',tag,fs,x,base),fillC(cmyk('#1A1A1A'))];
+    let xr=x+w-ws.reduce((t,v)=>t+v,0)-(roles.length-1)*fs*1.6;
+    roles.forEach(([a,b],i)=>{o.push(txt('700',a,fs,xr,base));const xa=xr+wid('700',a,fs)+sp;o.push(txt('400',b,fs,xa,base));xr+=ws[i]+fs*1.6;});
+    return o.join('\n');
+  }
   function qrOps(link,b,fill){
     const q=QR.make(link);if(!q)return '';const n=q.size,m=(b[2]-b[0])/n;let s=fillC(cmyk(fill))+'\n';
     for(let y=0;y<n;y++){let x=0;while(x<n){if(q.M[y][x]){let e=x;while(e<n&&q.M[y][e])e++;s+=`${f(b[0]+x*m)} ${f(b[1]+y*m)} ${f((e-x)*m)} ${f(m)} re\n`;x=e;}else x++;}}
@@ -2115,7 +2127,7 @@ const FRESQUE=(()=>{
     const A=await load();
     try{await document.fonts.ready;}catch(_){}
     const fr=capture(withLoose);
-    const fres=fr0=>{const b=fr.box;if(!isFinite(b[0]))return '';const pad=Math.min(fr0.w,fr0.h)*.035,bw=b[2]-b[0],bh=b[3]-b[1];
+    const fres=fr0=>{const b=fr.box;if(!isFinite(b[0]))return '';const pad=Math.min(fr0.w,fr0.h)*.012,bw=b[2]-b[0],bh=b[3]-b[1];
       const s=Math.min((fr0.w-2*pad)/bw,(fr0.h-2*pad)/bh,3),tx=fr0.x+(fr0.w-bw*s)/2-b[0]*s,ty=fr0.y+(fr0.h-bh*s)/2-b[1]*s;
       return `q ${f(fr0.x)} ${f(fr0.y)} ${f(fr0.w)} ${f(fr0.h)} re W n ${f(s)} 0 0 ${f(s)} ${f(tx)} ${f(ty)} cm\n${fr.ops}\nQ`;};
     const content=`${f(PT)} 0 0 ${f(-PT)} 0 ${f(A1H)} cm\n`+template(A.tpl,link,fres);
