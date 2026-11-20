@@ -406,8 +406,6 @@ button{font:inherit;color:inherit}
   <span class="sep desk"></span>
   <div class="grp desk">
     <button class="btn" id="bShuffle">Mélanger</button>
-    <button class="btn" id="bSolution">Solution</button>
-    <button class="btn" id="bVerify">Vérifier</button>
   </div>
   <span class="sep desk"></span>
   <div class="grp desk">
@@ -1525,9 +1523,7 @@ function ctxBoard(cx,cy){
     {label:'Zoomer',k:MOD+'+',run:()=>{userView=true;zoomAt(cx,cy,1.25);}},
     {label:'Dézoomer',k:MOD+'−',run:()=>{userView=true;zoomAt(cx,cy,.8);}},'-',
     {label:'Annuler',k:MOD+'Z',run:undo},
-    {label:'Vérifier ma carte',run:doVerify},
-    {label:'Mélanger les pièces',run:doShuffle},
-    {label:'Voir la solution',run:doSolution}]);
+    {label:'Mélanger les pièces',run:doShuffle}]);
 }
 window.addEventListener('pointerdown',e=>{if(!$('ctx').hidden&&!e.target.closest('#ctx'))closeCtx();},true);
 window.addEventListener('blur',closeCtx);
@@ -1566,8 +1562,6 @@ $('tMove').onclick=()=>setTool('move');
 $('tLink').onclick=()=>setTool(tool==='link'?'move':'link');
 $('bAdd').onclick=()=>openEditor(null);
 $('bShuffle').onclick=doShuffle;
-$('bSolution').onclick=doSolution;
-$('bVerify').onclick=doVerify;
 $('zIn').onclick=()=>{userView=true;zoomAt(innerWidth/2,innerHeight/2,1.25);};
 $('zOut').onclick=()=>{userView=true;zoomAt(innerWidth/2,innerHeight/2,.8);};
 $('zFit').onclick=fitView;
@@ -1689,9 +1683,7 @@ function openMenu(){
       :{l:'Sauvegarde du plateau',ic:I('<path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4"/>'),run:openData},
     '-',
     {l:'Exporter la fresque (PDF A1)',ic:I('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>'),run:openExport},
-    {l:'Vérifier ma carte',ic:I('<path d="M4 12.5l5 5L20 6.5"/>'),run:doVerify},
     {l:'Mélanger les pièces',ic:I('<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>'),run:doShuffle},
-    {l:'Voir la solution',ic:I('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),run:doSolution},
     {l:'Ajuster la vue',ic:I('<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/>'),run:fitView},
     '-',
     {l:'Paramètres',ic:I('<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'),run:openSettings},
@@ -2362,13 +2354,17 @@ function openSettings(){
     <div class="hint">Le plateau compte ${BASE.length-missing} carte${BASE.length-missing>1?'s':''} du kit sur ${BASE.length}.${old?` ${old} carte${old>1?'s ont':' a'} encore l’ancien numéro ou l’ancien texte.`:''}</div>
     <div class="acts" style="justify-content:flex-start">${missing||old?`<button class="btn wine" id="stKit">Passer au kit des ${BASE.length} cartes</button>`:'<span class="hint">Le plateau est à jour.</span>'}</div>
     <div class="rule" style="height:1px;background:var(--ink);opacity:.12;margin:6px 0"></div>
+    <div class="lt" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55">Correction</div>
+    <div class="hint">Comparer le plateau à la version de référence.</div>
+    <div class="acts" style="justify-content:flex-start"><button class="btn wine" id="stVerify">Vérifier ma carte</button><button class="btn" id="stSol">Voir la solution</button></div>
+    <div class="rule" style="height:1px;background:var(--ink);opacity:.12;margin:6px 0"></div>
     <div class="lt" style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.55">Version de référence</div>
     <div class="hint" id="refState"></div>
     <div class="acts" style="justify-content:flex-start" id="refActs"></div>
     <div class="rule" style="height:1px;background:var(--ink);opacity:.12;margin:6px 0"></div>
     <div class="acts" style="justify-content:space-between"><button class="btn" id="stData">Exporter ou importer le plateau</button><button class="btn" id="stClose">Fermer</button></div>
   </div></div>`);
-  $('stClose').onclick=closeModal; $('stData').onclick=()=>{closeModal();openData();};
+  $('stClose').onclick=closeModal; $('stVerify').onclick=()=>{closeModal();doVerify();}; $('stSol').onclick=()=>{closeModal();doSolution();}; $('stData').onclick=()=>{closeModal();openData();};
   if($('stKit')) $('stKit').onclick=()=>{upgradeKit();closeModal();};
   renderSettingsRef();
 }
