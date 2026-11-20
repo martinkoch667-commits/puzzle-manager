@@ -1074,13 +1074,24 @@ function findFree(ids,prefAngle){
 }
 function moveToFree(ids,prefAngle){const d=findFree(ids,prefAngle);ids.forEach(id=>{const p=byId(id);if(p){p.x+=d.dx;p.y+=d.dy;}});return d;}
 function nudgeFree(p){moveToFree([p.id],0);}
+/* Supprimer une carte : toujours après confirmation, et toujours rattrapable par la Bibliothèque */
 function deletePiece(id){
   const p=byId(id); if(!p) return;
-  if(BASE_IDS.has(id)){toast('Les cartes du kit ne se suppriment pas. Range-la à l’écart ; la Bibliothèque la retrouve en un clic.');return;}
-  pushHistory();
-  putInTrash(p);
-  S.pieces=S.pieces.filter(x=>x.id!==id);S.arrows=S.arrows.filter(a=>a.from!==id&&a.to!==id);sel=null;commit();
-  toast('Carte mise à la corbeille. La Bibliothèque permet de la remettre.',true);
+  const kit=BASE_IDS.has(id), nArr=S.arrows.filter(a=>a.from===id||a.to===id).length;
+  const name=(p.num?p.num+' · ':'')+(p.title||'Sans titre');
+  openModal(`<div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="dlT" aria-describedby="dlD" style="max-width:460px"><div class="data">
+    <h2 id="dlT">Supprimer cette carte ?</h2>
+    <div class="hint" id="dlD">« ${esc(name)} » disparaît du plateau pour tout le monde${nArr?`, avec ${nArr>1?'ses '+nArr+' flèches':'sa flèche'}`:''}. ${kit?'C’est une carte du kit : la Bibliothèque pourra la remettre, avec son texte d’origine.':'Elle part à la corbeille : la Bibliothèque pourra la remettre.'}</div>
+    <div class="acts"><button class="btn" id="dlNo" type="button">Annuler</button><button class="btn wine" id="dlYes" type="button">Supprimer la carte</button></div>
+  </div></div>`);
+  $('dlNo').onclick=closeModal; $('dlNo').focus();
+  $('dlYes').onclick=()=>{
+    closeModal(); if(!byId(id)) return;
+    pushHistory();
+    if(!kit) putInTrash(byId(id));
+    S.pieces=S.pieces.filter(x=>x.id!==id);S.arrows=S.arrows.filter(a=>a.from!==id&&a.to!==id);sel=null;commit();
+    toast(kit?'Carte supprimée. La Bibliothèque permet de la remettre.':'Carte mise à la corbeille. La Bibliothèque permet de la remettre.',true);
+  };
 }
 function duplicatePiece(id){
   const p=byId(id); if(!p) return; pushHistory();
@@ -1108,7 +1119,7 @@ function renderSelbar(){
     const inGroup=groupOf(p.id).size>1;
     bar.innerHTML=`<span class="what">${p.num?esc(p.num)+' · ':''}<b>${esc(p.title)}</b></span>
       <button class="btn" data-act="edit">Modifier</button><button class="btn" data-act="dup">Dupliquer</button>
-      ${inGroup?'<button class="btn" data-act="detach">Détacher</button>':''}${BASE_IDS.has(p.id)?'':'<button class="btn" data-act="del">Supprimer</button>'}`;
+      ${inGroup?'<button class="btn" data-act="detach">Détacher</button>':''}<button class="btn" data-act="del">Supprimer</button>`;
   }else{
     const a=S.arrows.find(x=>x.id===sel.id); if(!a){bar.hidden=true;return;}
     bar.innerHTML=Object.entries(KW).map(([k,v])=>`<button class="chip${a.kw===k?' on':''}" data-kw="${k}"><i style="background:${v.line}"></i>${v.word}</button>`).join('')+
@@ -1488,7 +1499,8 @@ function ctxPiece(pid,cx,cy){
       {label:'Dupliquer',k:MOD+'D',run:()=>duplicatePiece(pid)},
       ...(inGroup?[{label:'Détacher du groupe',k:'⌥ glisser',run:()=>detachPiece(pid)}]:[]),
       {label:'Relier à une autre carte',k:'L',run:()=>startLinkFrom(pid)},'-',
-      ...(BASE_IDS.has(pid)?[{label:'Ranger à l’écart',run:()=>{pushHistory();moveToFree([pid],Math.PI/2);const q=byId(pid);q.y+=400;moveToFree([pid],Math.PI/2);commit();}}]:[{label:'Mettre à la corbeille',k:'⌫',danger:1,run:()=>deletePiece(pid)}])]);
+      ...(BASE_IDS.has(pid)?[{label:'Ranger à l’écart',run:()=>{pushHistory();moveToFree([pid],Math.PI/2);const q=byId(pid);q.y+=400;moveToFree([pid],Math.PI/2);commit();}}]:[]),
+      {label:'Supprimer la carte…',k:'⌫',danger:1,run:()=>deletePiece(pid)}]);
 }
 function ctxBoard(cx,cy){
   closePop(); if(sel) select(null);
