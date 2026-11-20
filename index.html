@@ -321,7 +321,8 @@ button{font:inherit;color:inherit}
 .fmt{border-radius:12px}
 .data textarea,.join input,.sheet input[type=text],.sheet input:not([type]){border-radius:12px}
 #legend .lg i{border-radius:5px}
-.ours-tag{text-align:right;color:#81CFF4;font-weight:500}
+.ours-tag{text-align:right;color:#0E4E6D;font-weight:500}
+.ours-blk{margin-top:28px;padding-top:22px;border-top:2px solid #0E4E6D}.ours-blk h3{margin-top:0!important}
 .ours-row{display:flex;align-items:baseline;gap:10px;font-weight:700;font-size:21px;text-transform:uppercase;line-height:1.35}
 .ours-row i{flex:1;border-bottom:3px dotted currentColor;transform:translateY(-5px);min-width:20px}
 .ours-tools{margin-top:22px!important;font-size:14px!important}
@@ -1643,10 +1644,9 @@ const INFO={
       <p>Comme dans un puzzle, <b>chaque élément a son importance</b> et c’est en les reliant les uns aux autres que l’on obtient un <b>ensemble cohérent</b>.</p>
       <p>Cela montre que pour bien manager, il faut savoir associer toutes ces notions afin de faire avancer une équipe vers un <b>objectif commun</b>.</p>
       <div class="ft">La métaphore</div>`},
-  sources:{badge:'Sources',dot:'#0E4E6D',bg:'#C5ECFF',item:'Les sources',sub:'Les références des quatre jours',long:1,
-    html:SRC.map(d=>`<h3>${esc(d.day)}</h3><ul>${d.items.map(t=>`<li>${srcHTML(t)}</li>`).join('')}</ul>`).join('')+`<div class="ft">Les sources</div>`},
-  ours:{badge:'Ours',dot:'#81CFF4',bg:'#FEFAB0',item:'L’ours',sub:'Qui a fait quoi',
-    html:`<div class="st ours-tag">${OURS.tag.map(esc).join('<br>')}</div>${OURS.roles.map(([r,n])=>`<div class="ours-row"><span>${esc(r)}</span><i></i><span>${esc(n)}</span></div>`).join('')}<p class="ours-tools">${srcHTML(OURS.tools,'b')}</p>`}
+  sources:{badge:'Sources',dot:'#0E4E6D',bg:'#C5ECFF',item:'Les sources et l’ours',sub:'Les références et qui a fait quoi',long:1,
+    html:SRC.map(d=>`<h3>${esc(d.day)}</h3><ul>${d.items.map(t=>`<li>${srcHTML(t)}</li>`).join('')}</ul>`).join('')
+      +`<div class="ours-blk"><h3>L’ours</h3><div class="st ours-tag">${OURS.tag.map(esc).join('<br>')}</div>${OURS.roles.map(([r,n])=>`<div class="ours-row"><span>${esc(r)}</span><i></i><span>${esc(n)}</span></div>`).join('')}<p class="ours-tools">${srcHTML(OURS.tools,'b')}</p></div><div class="ft">Les sources et l’ours</div>`}
 };
 const infoWrap=(k,extra='',attrs='')=>{const I=INFO[k];return `<div class="ic-wrap${I.long?' long':''}"${attrs}><span class="badge2" style="background:${I.dot}">${esc(I.badge)}</span><article class="icard${I.long?' long':''}" style="--bg:${I.bg}">${I.html}</article>${extra}</div>`;};
 $('mpItems').innerHTML=Object.entries(INFO).map(([k,I])=>`<button type="button" class="mp-it" data-info="${k}"><span class="dot" style="background:${I.dot}">${esc(I.badge)}</span><span class="tx"><b>${esc(I.item)}</b><small>${esc(I.sub)}</small></span><svg class="ar" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`).join('')
